@@ -1,0 +1,27 @@
+name = "BranchingProcesses"
+uuid = "2d116533-6c92-4ed5-8daf-be1be2dc1074"
+authors = ["tmichoel <11647967+tmichoel@users.noreply.github.com>"]
+version = "0.1.0"
+
+[deps]
+AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
+Arpack = "7d9fca2a-8960-54d3-9f78-7d1dccf2cb97"
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004"
+KrylovKit = "0b1a1467-8014-51b9-945f-bf0ae24f4b77"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+MLBase = "f0e99cf1-93fa-52ec-9ecc-5026115318e0"
+MatrixEquations = "99c1a7ee-ab34-5fd5-8076-27c950a045f4"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+SimpleNonlinearSolve = "727e6d20-b764-4bd8-a329-72de5adea6c7"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
+
+[compat]
+Arpack = "0.5.4"
+KrylovKit = "0.8.3"
+MLBase = "0.9.2"
+StatsBase = "0.33.21"
+Zygote = "0.6.72"
