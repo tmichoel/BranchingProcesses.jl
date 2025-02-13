@@ -97,6 +97,16 @@ function collectdriftmodesreversible(λ, leftvecs, rightvecs)
     return rightvecs * diagm(λ) * leftvecs'
 end
 
+
+"""
+    diffusiondriftmodesreversible(λ, leftvecs, rightvecs, Σsteady)
+
+Create an approximate diffusion matrix of a reversible multivariate Ornstein-Uhlenbeck process from the slowest normal modes (smallest eigenvalues and their corresponding left and right eigenvectors) of the process. The input arguments are the eigenvalues `λ` and right eigenvectors `rightvecs` of the drift matrix. The output is the approximate matrix `B` where `BB^T` is the diffusion matrix.
+"""
+function diffusiondriftmodesreversible(λ, rightvecs, orthovecs)
+    return sqrt(2) * rightvecs * diagm(sqrt.(λ)) * orthovecs'
+end
+
 """
     learndriftmatrixreversible(Σclone,Σsteady,K)
 
