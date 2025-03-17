@@ -32,9 +32,20 @@ end
 
 Simulate a branching Ornstein-Uhlenbeck process on a binary tree with drift parameter `α`, diffusion constant `σ`, and `ngen` generations. For the root node, the process is simulatad from time `start` to `stop` with time step `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the steady state distribution. Subsequent nodes are simulated recursively from the final state of their parent node with equal generation length.
 """
-function branchingoupsim(α,σ,ngen;xinit=[],start=0.0,dt=1e-2,stop=1.0)
+function branchingoupsim(α,σ,ngen::T;xinit=[],start=0.0,dt=1e-2,stop=1.0) where T<:Integer
     tree = binarysplit(ngen)
     ouptreesim!(tree,α,σ;xinit=xinit,start=start,dt=dt,stop=stop)
+    return tree
+end
+
+"""
+    branchingoupsim(α,σ,ngen;xinit=[],start=0.0,dt=1e-2,stop=1.0)
+
+Simulate a branching Ornstein-Uhlenbeck process upto time `t` on an exponentially branching tree with drift parameter `α`, diffusion constant `σ`, and branching rate `λ`. For the root node, the process is simulated from time `start` for an exponentially distributed lifetime `τ` with time step `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the steady state distribution. Subsequent nodes are simulated recursively from the final state of their parent node.
+"""
+function branchingoupsim(α,σ,t::T;λ=1.0,xinit=[],start=0.0,dt=1e-2) where T<:Real
+    tree = binarysplit(t,λ)
+    ouptreesim!(tree,α,σ;xinit=xinit,start=start,dt=dt,stop=start+tree.lifetime)
     return tree
 end
 
@@ -48,7 +59,7 @@ function ouptreesim!(tree,α,σ;xinit=[],start=0.0,dt=1e-2,stop=1.0)
     tree.x, tree.t = oupsim(α, σ; xinit=xinit, start=start, dt=dt, stop=stop)
     # recursively simulate trajectories for the root's children, starting from the root's final value
     for node in tree.children
-        ouptreesim!(node,α,σ; xinit=tree.x[end], start=stop, dt=dt, stop=stop + (stop-start))
+        ouptreesim!(node,α,σ; xinit=tree.x[end], start=stop, dt=dt, stop=stop+node.lifetime)
     end
 end
 

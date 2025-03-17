@@ -5,11 +5,17 @@ Plot the simulated trajectories of a branching process stored in a tree of type 
 """
 function plotbranchingprocess(tree; p=plot(), col=1)
     # set a default colorscheme based on the height (number of generations) of the tree
-    ngen = treeheight(tree)
-    colors = colorschemes[Symbol(@sprintf("RdYlBu_%d", ngen+1))].colors
+    ncolr = treeheight(tree)+1
+    if ncolr<3
+        ncolr=3
+    elseif ncolr>11
+        ncolr=11
+    end
+    
+    colors = colorschemes[Symbol(@sprintf("RdYlBu_%d", ncolr))].colors
     plotsimtree!(p,tree,col,colors)
     # set the axis labels
-    push!(p, Guide.xlabel("t (generations)"))
+    push!(p, Guide.xlabel("time"))
     push!(p, Guide.ylabel("x"))
     return p
 end
@@ -21,8 +27,8 @@ Recursively add the simulated trajectories of variable `col` in a branching proc
 """ 
 function plotsimtree!(p, tree::SimTree, col, colors)
     # each generation has a different color
-    #color = ColorSchemes.RdYlBu_11.colors[round(Int,tree.t[end])]
-    color = colors[round(Int,tree.t[end])]
+    coli = min(treeheight(tree)+1, length(colors))
+    color = colors[coli]
     # add the root node trajectory to the plot
     push!(p,layer(x=tree.t,y=tree.x[:,col],color=[color],Geom.line))
     for node in tree.children
