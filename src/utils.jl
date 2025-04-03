@@ -64,25 +64,6 @@ function invgeomsum(y,K)
     return sol.u
 end
 
-# function invgeomsum_pol(y,K)
-#     # check if we are in the singular case y=K+1
-#     if y == K+1
-#         return 1.
-#     end
-#     # coefficients of the polynomial  p(z) = z^{K+1} - y*z + y - 1, in ascending order, from the lowest to the highest
-#     p = [0. for _ in 0:K+1]
-#     p[1] = y - 1
-#     p[2] = -y
-#     p[end] = 1.
-#     # find the roots of the polynomial
-#     r = roots(p)
-#     # 1 is always a root, but has been dealt with above
-#     # find the root that is not 1 and returns the correct geometric sum
-#     gs = geomsum.(r, K)
-    
-#     return r
-# end
-
 """
     geomsum(x,K)
 
@@ -94,6 +75,71 @@ function geomsum(x,K)
     else
         return (1-x^(K+1))/(1-x)
     end 
+end
+
+"""
+    invgrowthfun(y,t=1.)
+
+Compute the inverse of the growth function of a scaled clonal variance with simple exponential growth of the clone and exponential decay of the fluctuations. The optional parameters are the growth rate `r` (default 1) and the final time `tmax` (default 1).
+"""
+function invgrowthfun(y;r=1.,tmax=1.)
+    # the growth function range is the positive numbers
+    if y < 0
+        return NaN
+    elseif y == tmax # critical case
+        return r/2
+    else
+        # define the function to find the root of and the parameter vector
+        f(u,p) = growthfun(u,p) - y
+        p = [r,tmax]
+        if y > tmax
+            # the supercritical case with bracketing interval
+            xspan = (0., r/2)
+            # define the root finding problem
+            prob = IntervalNonlinearProblem(f, xspan, p)
+            # solve the problem and return the result
+            sol = solve(prob)
+            return sol.u
+        else
+            # the subcritical case with bracketing interval
+            xspan = (r/2, 0.5*(r+1/y))
+            # define the root finding problem
+            prob = IntervalNonlinearProblem(f, xspan, p)
+            # solve the problem and return the result
+            sol = solve(prob)
+            return sol.u
+        end
+    end
+end
+
+"""
+    growthfun(α,p)
+
+Compute the growth function of a scaled clonal variance with simple exponential growth of the clone and exponential decay of the fluctuations with rate `α`. The input `p` is a vector of parameters `[r,tmax]`` where `r` is the growth rate of the clone and `tmax` is the final time for the growth function.
+"""
+function growthfun(α,p)
+    # set the parameters
+    r = p[1]
+    tmax = p[2]
+    # compute the growth function
+    if α == r/2
+        return tmax
+    else
+        return (exp.((r-2α).*tmax) .- 1.) ./ (r .- 2α)
+    end
+end
+
+"""
+    loggrowthfun(x,t)
+
+Compute the log of the growth function of a scaled clonal variance with simple exponential growth of the clone and exponential decay of the fluctuations.
+"""
+function loggrowthfun(x,t=1.)
+    if x == 0.
+        return log(t)
+    elseif x .> 0
+        return t*x + log(1 - exp(-t*x)) - log(x) 
+    end
 end
 
 """

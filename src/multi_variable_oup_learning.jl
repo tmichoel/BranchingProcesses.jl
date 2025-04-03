@@ -1,24 +1,4 @@
 
-"""
-    driftlsqfun(X,Δ₀,Δₖ,k)
-
-Compute the least-squares cost function for the drift matrix of a multivariate Ornstein-Uhlenbeck process that generates a clone with shifted covariance matrix `Δₖ=2Σₖ-Δ₀` from the steady state covariance matrix `Δ₀=Σsteady` after `k` generations. The input `X` is an invertible matrix of the same size as `Δ₀` and `Δₖ`. It relates to the drift matrix `A` of the process as `A = log(1+exp(X))`. This ensures that the eigenvalues of `A` are positive, as required for the process to have a stationary state.
-"""
-function driftlsqfun(X,Δ₀,Δₖ,k)
-    # reshape the input matrix
-    X = reshape(X, size(Δ₀))
-    Aexp = inv(exp(X)+I)
-    Diff = Δₖ - mvdeltaclone(Aexp,Δ₀,k)
-    return norm(Diff,2)
-end
-
-function driftlsqfun_grad(X,Δ₀,Δₖ,k)
-    return Zygote.gradient(X -> driftlsqfun(X,Δ₀,Δₖ,k), X)
-end
-
-function driftlsqfun_hess(X,Δ₀,Δₖ,k)
-    return Zygote.hessian(X -> driftlsqfun(X,Δ₀,Δₖ,k), X)
-end
 
 """
     learndriftmodesreversible(Σclone,Σsteady,K,nummodes=1)
@@ -159,4 +139,26 @@ function learndriftreversible2(Σclone,Σsteady,K)
     A = Σsteady * F.vectors[:,λ.>0.] * diagm(λ[λ.>0.]) * F.vectors[:,λ.>0.]'
     # return the result
     return A, λ
+end
+
+
+"""
+    driftlsqfun(X,Δ₀,Δₖ,k)
+
+Compute the least-squares cost function for the drift matrix of a multivariate Ornstein-Uhlenbeck process that generates a clone with shifted covariance matrix `Δₖ=2Σₖ-Δ₀` from the steady state covariance matrix `Δ₀=Σsteady` after `k` generations. The input `X` is an invertible matrix of the same size as `Δ₀` and `Δₖ`. It relates to the drift matrix `A` of the process as `A = log(1+exp(X))`. This ensures that the eigenvalues of `A` are positive, as required for the process to have a stationary state.
+"""
+function driftlsqfun(X,Δ₀,Δₖ,k)
+    # reshape the input matrix
+    X = reshape(X, size(Δ₀))
+    Aexp = inv(exp(X)+I)
+    Diff = Δₖ - mvdeltaclone(Aexp,Δ₀,k)
+    return norm(Diff,2)
+end
+
+function driftlsqfun_grad(X,Δ₀,Δₖ,k)
+    return Zygote.gradient(X -> driftlsqfun(X,Δ₀,Δₖ,k), X)
+end
+
+function driftlsqfun_hess(X,Δ₀,Δₖ,k)
+    return Zygote.hessian(X -> driftlsqfun(X,Δ₀,Δₖ,k), X)
 end

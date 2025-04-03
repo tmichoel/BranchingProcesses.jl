@@ -6,7 +6,7 @@ using ColorSchemes
 using Gadfly
 using LaTeXStrings
 using Printf
-using SimpleNonlinearSolve
+using NonlinearSolve
 using MatrixEquations
 using LinearAlgebra
 using MLBase
@@ -22,7 +22,7 @@ export mvoupsim, mvbranchingoupsim, mvcovarsteady, mvcovarclone, mvdeltaclone, i
 export driftlsqfun, driftlsqfun_grad, learndriftmodesreversible, invertdriftmodesreversible, collectdriftmodesreversible, diffusiondriftmodesreversible, learndriftmatrixreversible, learndriftreversible2
 export mvoupsimclamp
 export plotbranchingprocess
-export normalizecols, normalizecols!, scalecols!, geomsum, invgeomsum, stdconfint, varconfint, cleanroc
+export normalizecols, normalizecols!, scalecols!, geomsum, invgeomsum, growthfun, invgrowthfun, stdconfint, varconfint, cleanroc
 
 
 include("single_variable_oup.jl")

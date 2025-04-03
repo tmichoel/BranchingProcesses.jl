@@ -39,11 +39,11 @@ function mvoupupdate(x,A,B,dt)
 end
 
 """
-    mvbranchingoupsim(A,B,ngen;xinit=[], Σ=[], start=0.0, dt=1e-2, stop=1.0)
+    mvbranchingoupsim(A,B,ngen;xinit=[], Σ=[], start=0.0, dt=1e-2, stop=1.0) where T<:Integer
 
 Simulate a branching Ornstein-Uhlenbeck process on a binary tree with drift matrix `A`, diffusion matrix `BB^T`, and `ngen` generations. For the root node, the process is simulatad from time `start` to `stop` with time step `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the multivariate normal steady state distribution with mean zero and covariance matrix `Σ`. If `xinit` is not provided and `Σ` is not provided, an error is returned. To compute the steady state covariance matrix, use the function `mvcovarsteady`. Subsequent nodes are simulated recursively from the final state of their parent node with equal generation length.
 """
-function mvbranchingoupsim(A, B, ngen; xinit=[], Σ=[], start=0.0, dt=1e-2, stop=1.0)
+function mvbranchingoupsim(A, B, ngen::T; xinit=[], Σ=[], start=0.0, dt=1e-2, stop=1.0) where T<:Integer
     # if xinit is empty, sample the initial condition from the steady state
     if isempty(xinit)
         if isempty(Σ)
@@ -56,6 +56,27 @@ function mvbranchingoupsim(A, B, ngen; xinit=[], Σ=[], start=0.0, dt=1e-2, stop
     tree = binarysplit(ngen)
     # recursively simulate the process on the tree
     mvouptreesim!(tree,A,B;xinit=xinit,Σ=Σ,start=start,dt=dt,stop=stop)
+    return tree
+end
+
+"""
+    mvbranchingoupsim(A,B,t;xinit=[], Σ=[], start=0.0, dt=1e-2, stop=1.0) where T<:Real
+
+Simulate a branching Ornstein-Uhlenbeck process upto time `t` on a binary tree with drift matrix `A`, diffusion matrix `BB^T`, and `ngen` generations. For the root node, the process is simulatad from time `start` for a lifetime that is exponentially distributed with rate `λ` using time steps `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the multivariate normal steady state distribution with mean zero and covariance matrix `Σ`. If `xinit` is not provided and `Σ` is not provided, an error is returned. To compute the steady state covariance matrix, use the function `mvcovarsteady`. Subsequent nodes are simulated recursively from the final state of their parent node.
+"""
+function mvbranchingoupsim(A, B, t::T; λ=1.0, xinit=[], Σ=[], start=0.0, dt=1e-2) where T<:Real
+    # if xinit is empty, sample the initial condition from the steady state
+    if isempty(xinit)
+        if isempty(Σ)
+            error("Initial condition or covariance matrix must be provided.")
+        else
+            xinit = rand(MvNormal(Σ))
+        end
+    end
+    # initialize the tree
+    tree = binarysplit(t,λ)
+    # recursively simulate the process on the tree
+    mvouptreesim!(tree,A,B;xinit=xinit,Σ=Σ,start=start,dt=dt,stop=start+tree.lifetime)
     return tree
 end
 
@@ -88,11 +109,11 @@ function mvcovarsteady(A,B)
 end
 
 """
-    mvcovarclone(A,B,ngen)
+    mvcovarclone(A,B,ngen::T) where T<:Integer
 
 Compute the covariance matrix of a clone of multivariate Ornstein-Uhlenbeck processes with drift matrix `A` and noise covariance matrix `B` after `ngen` generations by iteration
 """
-function mvcovarclone(A,B,ngen)
+function mvcovarclone(A,B,ngen::T) where T<:Integer
     # compute the steady state covariance
     Σsteady = mvcovarsteady(A,B)
     # we need the exponentiated drift matrix

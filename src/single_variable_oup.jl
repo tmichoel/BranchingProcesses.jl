@@ -30,7 +30,7 @@ end
 """
     branchingoupsim(α,σ,ngen;xinit=[],start=0.0,dt=1e-2,stop=1.0)
 
-Simulate a branching Ornstein-Uhlenbeck process on a binary tree with drift parameter `α`, diffusion constant `σ`, and `ngen` generations. For the root node, the process is simulatad from time `start` to `stop` with time step `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the steady state distribution. Subsequent nodes are simulated recursively from the final state of their parent node with equal generation length.
+Simulate a branching Ornstein-Uhlenbeck process on a binary tree with constant generation time, drift parameter `α`, diffusion constant `σ`,  and `ngen` generations. For the root node, the process is simulatad from time `start` to `stop` with time step `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the steady state distribution. Subsequent nodes are simulated recursively from the final state of their parent node with equal generation length.
 """
 function branchingoupsim(α,σ,ngen::T;xinit=[],start=0.0,dt=1e-2,stop=1.0) where T<:Integer
     tree = binarysplit(ngen)
@@ -39,9 +39,9 @@ function branchingoupsim(α,σ,ngen::T;xinit=[],start=0.0,dt=1e-2,stop=1.0) wher
 end
 
 """
-    branchingoupsim(α,σ,ngen;xinit=[],start=0.0,dt=1e-2,stop=1.0)
+    branchingoupsim(α,σ,t;λ=1.0,xinit=[],start=0.0,dt=1e-2)
 
-Simulate a branching Ornstein-Uhlenbeck process upto time `t` on an exponentially branching tree with drift parameter `α`, diffusion constant `σ`, and branching rate `λ`. For the root node, the process is simulated from time `start` for an exponentially distributed lifetime `τ` with time step `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the steady state distribution. Subsequent nodes are simulated recursively from the final state of their parent node.
+Simulate a branching Ornstein-Uhlenbeck process upto time `t` on a binary tree with drift parameter `α`, diffusion constant `σ`, and branching rate `λ`. For the root node, the process is simulated from time `start` for a lifetime that is exponentially distributed with rate `λ` using time steps `dt` and initial state `xinit`. If `xinit` is not provided, the initial state is sampled from the steady state distribution. Subsequent nodes are simulated recursively from the final state of their parent node.
 """
 function branchingoupsim(α,σ,t::T;λ=1.0,xinit=[],start=0.0,dt=1e-2) where T<:Real
     tree = binarysplit(t,λ)
@@ -82,11 +82,11 @@ function stdsteady(α, σ)
 end
 
 """
-    varclone(α,σ,ngen)
+    varclone(α,σ,ngen::T) where T<:Integer
 
-Steady state variance of a clone of Ornstein-Uhlenbeck processes (scaled sum of Ornstein-Uhlenbeck processes descended from a single steady state process through binary splitting) with drift parameter `α` and noise standatd deviation `σ` after `ngen` generations.
+Steady state variance of a clone of Ornstein-Uhlenbeck processes (scaled sum of Ornstein-Uhlenbeck processes descended from a single steady state process through binary splitting with constant generations) with drift parameter `α` and noise standatd deviation `σ` after `ngen` generations.
 """
-function varclone(α,σ,ngen)
+function varclone(α,σ,ngen::T) where T<:Integer
     if ngen==0
         return varsteady(α,σ)
     end
@@ -94,13 +94,30 @@ function varclone(α,σ,ngen)
     return (1. + 0.5 * varratiofun(exp(r),ngen)) * varsteady(α,σ)
 end
 
+"""
+    varclone(α,σ,t::T,λ=1.0) where T<:Real
+
+Steady state variance of a clone of Ornstein-Uhlenbeck processes (scaled sum of Ornstein-Uhlenbeck processes descended from a single steady state process through binary splitting) with drift parameter `α`,  noise standatd deviation `σ`, growth  time `t`, branching rate `λ`, average number of offspring `np` and number of offspring variation (2nd moment minus 1st moment) `vp`. The default values are branching rate one and deterministic splitting in two offspring particles.
+"""
+function varclone(α,σ,t::T;λ=1.0,np=2.0,vp=2.0) where T<:Real
+    if t==0.
+        return varsteady(α,σ)
+    end
+    r = np - λ # growth rate of the clone
+    if 2α==r # critical case
+        return (1 .+ vp .* t) * varsteady(α,σ)
+    else
+        return ( 1. + vp .* (exp.((r-2α)*t) - 1. )./(r-2α) ) * varsteady(α,σ)
+    end
+end
+
 
 """
-    stdclone(α,σ,ngen)
+    stdclone(α,σ,ngen::T) where T<:Integer
 
 Steady state standard deviation of a clone of Ornstein-Uhlenbeck processes (scaled sum of Ornstein-Uhlenbeck processes descended from a single steady state process through binary splitting) with drift parameter `α` and noise standatd deviation `σ` after `ngen` generations.
 """
-function stdclone(α,σ,ngen)
+function stdclone(α,σ,ngen::T) where T<:Integer
     return sqrt(varclone(α,σ,ngen))
 end
 
@@ -118,16 +135,37 @@ end
 
 
 """
-    oupinference(varclone, varsteady)
+    oupinference(varclone, varsteady, ngen::T) where T<:Integer
 
-Estimate the drift and diffusion parameters of an Ornstein-Uhlenbeck process from the (estimated) steady state variance of a branching Ornstein-Uhlenbeck processes after `ngen` generations and the (estimated) steady state variance of a single Ornstein-Uhlenbeck process.
+Estimate the drift and diffusion parameters of an Ornstein-Uhlenbeck process from the (estimated) variance of a branching Ornstein-Uhlenbeck processes after `ngen` generations and the (estimated) steady state variance of a single Ornstein-Uhlenbeck process.
 """
-function oupinference(varclone, varsteady, ngen)
+function oupinference(varclone, varsteady, ngen::T) where T<:Integer
     # compute the ratio parameter of the steady state variances
     λ = 2. * varclone / varsteady .- 1 
 
     # estimate α
     α = -0.5 * log( 0.5 * invgeomsum(λ, ngen) )
+
+    # estimate σ
+    σ = sqrt(2 * varsteady * α )
+    return α, σ
+end
+
+
+"""
+    oupinference(varclone, varsteady, t::T; λ=1.0,np=2.0,vp=2.0) where T<:Real
+
+Estimate the drift and diffusion parameters of an Ornstein-Uhlenbeck process from the (estimated) steady state variance of a single Ornstein-Uhlenbeck process and the (estimated) variance of a clone of Ornstein-Uhlenbeck processes (scaled sum of Ornstein-Uhlenbeck processes descended from a single steady state process through binary splitting) with drift parameter `α`,  noise standatd deviation `σ`, growth  time `t`, branching rate `λ`, average number of offspring `np` and number of offspring variation (2nd moment minus 1st moment) `vp`. The default values are branching rate one and deterministic splitting in two offspring particles.
+"""
+function oupinference(varclone, varsteady, t::T; λ=1.0,np=2.0,vp=2.0) where T<:Real
+    # growth rate of the clone
+    r = np - λ 
+    
+    # compute the scaled ratio of the steady state variances
+    varratio = (varclone/varsteady - 1.) / vp
+
+    # compute the inverse growth function and estimate α
+    α = invgrowthfun(varratio; r=r, tmax=t)
 
     # estimate σ
     σ = sqrt(2 * varsteady * α )
