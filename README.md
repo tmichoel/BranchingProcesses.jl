@@ -5,7 +5,7 @@
 
 [BranchingProcesses](https://github.com/tmichoel/BranchingProcesses.jl) is a Julia package for simulation and parameter inference in branching stochastic processes, also known as branching particle systems. 
 
-Branching stochastic processes are processes where "particles" (which could represent cells, individuals, or species depending on the context) have one or more degrees of freedom $X(t)$ whose dynamics is described by a stationary Markov process. After a certain lifetime, a particle splits into $k\geq 0$ identical, independent offspring particles with probability $p_k$. This process is repeated indefinitely, producing a collection of $N(t)$ particles at time $t$. Splitting happens with a rate $\gamma(\tau)$ that may depend on the current age $\tau$ of the particle.
+Branching stochastic processes are processes where "particles" (which could represent cells, individuals, or species depending on the context) have one or more degrees of freedom $X(t)$ whose dynamics is described by a stationary Markov process. After a certain lifetime, a particle splits into $k\geq 0$ identical, independent offspring particles with probability $p_k$. This process is repeated indefinitely, producing a collection of $N(t)$ particles at time $t$. Splitting happens with a rate function $\gamma(x,\tau)$ that may depend on the current state $x$ and age $\tau$ of the particle.
 
 Examples of such processes are:
 
@@ -36,9 +36,9 @@ Specific processes that will be implemented in the package are:
 - [Birth-death process](https://en.wikipedia.org/wiki/Birth%E2%80%93death_process)
 - The stochastic gene expression models of [Gorin *et al* (2022)](https://www.nature.com/articles/s41467-022-34857-7)
 
-## Supported lifetime distributions
+## Supported rate function
 
-Any continuous or discrete [univariate distribution](https://juliastats.org/Distributions.jl/stable/univariate/) with support on the positive real halfline (default: [Exponential](https://en.wikipedia.org/wiki/Exponential_distribution), that is, branching with constant rate).
+Any valid [constant](https://docs.sciml.ai/JumpProcesses/stable/api/#JumpProcesses.ConstantRateJump) or [variable](https://docs.sciml.ai/JumpProcesses/stable/api/#JumpProcesses.VariableRateJump) rate function. The default is a constant rate function with parameter 1, that is, the probability for a particle to be alive with lifetime $\tau$ is $\exp(-\tau)$.
 
 ## Supported splitting distributions
 
