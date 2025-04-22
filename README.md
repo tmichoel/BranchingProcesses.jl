@@ -33,7 +33,7 @@ Specific processes that will be implemented in the package are:
 
 - [Brownian motion](https://en.wikipedia.org/wiki/Brownian_motion)
 - [Ornstein-Uhlenbeck process](https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process)
-- [Bearth-death process](https://en.wikipedia.org/wiki/Birth%E2%80%93death_process)
+- [Birth-death process](https://en.wikipedia.org/wiki/Birth%E2%80%93death_process)
 - The stochastic gene expression models of [Gorin *et al* (2022)](https://www.nature.com/articles/s41467-022-34857-7)
 
 ## Supported lifetime distributions
