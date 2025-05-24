@@ -11,8 +11,8 @@ function solve_and_split_constantrate(prob::T, λ::S) where {T<:SDEProblem, S<:R
     if τ >= prob.tspan[2] - prob.tspan[1]
         # sample a trajectory for the current particle with its given initial condition and time span
         sol = solve(prob)
-        # return a SimTree with the solution for the current branch and no children
-        return SimTree(sol.u, sol.t, [])
+        # return a BranchingProcessSolution with the solution for the current branch and no children
+        return BranchingProcessSolution{typeof(sol)}(sol, [])
     else
         # remake the problem for the current particle with the time span set to the sampled lifetime
         currentprob = remake(prob, tspan=(prob.tspan[1], prob.tspan[1]+τ))
@@ -22,8 +22,8 @@ function solve_and_split_constantrate(prob::T, λ::S) where {T<:SDEProblem, S<:R
         newprob = remake(prob, tspan=(prob.tspan[1]+τ, prob.tspan[2]), u0=sol.u[end])
         # sample the number of children
         nchild = 2 # TODO: allow sampling from an input distribution
-        # return a SimTree with the solution for the current branch and recursively solve its children
-        return SimTree(sol.u, sol.t, [solve_and_split_constantrate(newprob, λ) for _ in 1:nchild])
+        # return a BranchingProcessSolution with the solution for the current branch and recursively solve its children
+        return BranchingProcessSolution(sol, [solve_and_split_constantrate(newprob, λ) for _ in 1:nchild])
     end
 end
 
