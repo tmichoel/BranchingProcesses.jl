@@ -2,11 +2,9 @@ module BranchingProcesses
 
 # dependencies
 using AbstractTrees
-using Catalyst
-using DifferentialEquations
 using Distributions
-using JumpProcesses
 using RecipesBase
+using SciMLBase
 
 # include files
 include("types.jl")
