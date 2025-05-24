@@ -1,7 +1,11 @@
 """
     solve_and_split_constantrate(prob::T, λ::S) where {T<:SDEProblem, S<:Real}
 
-TBW
+Recursively solve a branching stochastic process where the single-particle dynamics is defined by the SDE problem `prob` and the branching rate is a constant `λ`.
+
+The timespan of the problem `prob` defines the total time interval for the branching process. A lifetime for the first particle is sampled from an exponential distribution with rate `λ`. If the lifetime is larger than the total time interval, the problem is solved until the end of the interval and a solution node is returned without children. If the lifetime is smaller than the total time interval, the problem is solved until the sampled lifetime, and a solution node is returned with recursively solved children for the remaining time interval.
+
+See also [`sample_lifetime_constantrate`](@ref), [SDE problems](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/).
 """
 function solve_and_split_constantrate(prob::T, λ::S) where {T<:SDEProblem, S<:Real}
     # sample the lifetime of the current particle
