@@ -17,7 +17,7 @@ Although the package can probably be used or extended for generic phylodynamic a
 
 The primary motivation for this package is to provide a framework for the analysis of a "memory" phenomenon that can occur in branching stochastic processes if the relaxation rate of the single-particle dynamics is slow relative to the branching rate. In this case the system can remember its initial state, or, put differently, large fluctuations early in the expansion can have a long-lasting effect on the state of the system. The study of this phenomenon implicitly traces its roots (no pun intended) to [Luria and Delbrück's fluctuation analysis](https://en.wikipedia.org/wiki/Luria%E2%80%93Delbr%C3%BCck_experiment). More recently, it has been
 
-- studied [mathematically in branching Ornstein-Uhlenbeck processes]( https://doi.org/10.1214/EJP.v20-4233),
+- studied [mathematically in branching Ornstein-Uhlenbeck processes](https://doi.org/10.1214/EJP.v20-4233),
 - observed experimentally [in proliferating cancer cell populations](https://doi.org/10.1016/j.cell.2020.07.003)
 - proposed as an important property of [proliferating active matter](https://doi.org/10.1038/s42254-023-00593-0)
 
