@@ -3,8 +3,8 @@
 
 A tree structure to hold a solution of a branching stochastic process. It has fields
 
-- `sol`: the solution, that is, sample trajectory of the particle associated to the node, which is an instance of [`SciMLBase.AbstractSciMLSolution`](https://docs.sciml.ai/SciMLBase/stable/interfaces/Solutions/#AbstractSciMLSolution-API).
-- `children`: a vector of `BranchingProcessSolution` instances representing the children branches of the current branch.
+- `sol`: the solution, that is, sample trajectory, of the particle associated to the node, which is an instance of [`SciMLBase.AbstractSciMLSolution`](https://docs.sciml.ai/SciMLBase/stable/interfaces/Solutions/#AbstractSciMLSolution-API).
+- `children`: a vector of `BranchingProcessSolution` instances representing the child particles of the current particle.
 
 The solution type `T` must be the same for all nodes in the tree.
 """
