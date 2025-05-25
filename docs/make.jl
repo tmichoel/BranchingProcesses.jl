@@ -14,7 +14,8 @@ makedocs(
     ),
     pages=[
         "Introduction" => "index.md",
-        "Solvers" => "solvers.md"
+        "Solvers" => "solvers.md",
+        "Types" => "types.md"
     ],   
 )
 
