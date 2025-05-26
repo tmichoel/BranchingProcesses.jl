@@ -1,8 +1,20 @@
+"""
+## Exports
+
+$(EXPORTS)
+
+## Imports
+
+$(IMPORTS)
+
+$(README)
+"""
 module BranchingProcesses
 
 # dependencies
 using AbstractTrees
 using Distributions
+using DocStringExtensions
 using RecipesBase
 using SciMLBase
 
