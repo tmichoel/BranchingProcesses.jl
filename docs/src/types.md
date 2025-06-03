@@ -7,7 +7,6 @@ CurrentModule = BranchingProcesses
 
 ```@docs
 ConstantRateBranchingProblem
-BranchingSDEProblem
 ```
 
 ## Solution types
