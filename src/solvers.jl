@@ -1,17 +1,12 @@
 """
-    solve(bp::T, alg::A; kwargs...) where {T<:BranchingSDEProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
+    solve(bp::T, alg::A; kwargs...) where {T<:ConstantRateBranchingProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
 
-Solve a branching stochastic process defined by the `BranchingSDEProblem` `bp`. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample trajectories of the underlying SDE problem.
+Solve a branching stochastic process with constant branching rate defined by the `ConstantRateBranchingProblem` `bp`. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample trajectories of the underlying SDE problem.
 
-See also: [`BranchingSDEProblem`](@ref), [`solve_and_split_constantrate`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
+See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_split_constantrate`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
-function SciMLBase.solve(bp::T, alg::A=nothing; kwargs...) where {T<:BranchingSDEProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
-    # different solvers are called depending on the branching rate being constant or a function of time
-    if isa(bp.branchrate, Real)
-        return solve_and_split_constantrate(bp.prob, bp.branchrate, bp.nchild, alg; kwargs...)
-    else
-        throw(ArgumentError("Branching rate must be a constant for the current implementation."))
-    end
+function SciMLBase.solve(bp::T, alg::A=nothing; kwargs...) where {T<:ConstantRateBranchingProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
+    return solve_and_split_constantrate(bp.prob, bp.branchrate, bp.nchild, alg; kwargs...)
 end
 
 """

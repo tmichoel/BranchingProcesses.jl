@@ -3,6 +3,43 @@ abstract type BranchingProblem end;
 """
 $(TYPEDEF)
 
+A structure to define a branching stochastic process with constant branching rate.
+
+## Fields
+
+$(FIELDS)
+
+"""
+struct ConstantRateBranchingProblem{P<:Union{SciMLBase.AbstractSDEProblem, SciMLBase.AbstractJumpProblem}, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}} <: BranchingProblem
+    """The SDE or jump process problem defining the single-particle dynamics of the branching process, an instance of [`SciMLBase.AbstractSDEProblem`](https://docs.sciml.ai/SciMLBase/stable/interfaces/Problems/#SciMLBase.AbstractSDEProblem) or [`SciMLBase.AbstractJumpProblem`](https://docs.sciml.ai/SciMLBase/stable/interfaces/Problems/#SciMLBase.AbstractJumpProblem)."""
+    prob::P
+    """The branching rate of the process, which must be a positive real number."""
+    branchrate::R
+    """The number of children to be created for each particle, which can be a non-negative integer or a [discrete distribution](https://juliastats.org/Distributions.jl/stable/univariate/#Discrete-Distributions) with non-negative support from which the number of children is sampled."""
+    nchild::O
+   
+    function ConstantRateBranchingProblem(prob::P, branchrate::R, nchild::O) where {P<:Union{SciMLBase.AbstractSDEProblem, SciMLBase.AbstractJumpProblem}, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}}
+        # ensure that the branching rate is a positive real number
+        if !isa(branchrate, Real) || branchrate <= 0
+            throw(ArgumentError("branchrate must be a positive real number"))
+        end
+        # ensure the number of children is a positive integer or a discrete distribution with positive support
+        if isa(nchild, Integer)
+            if nchild < 0
+                throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
+            end
+        elseif isa(nchild, DiscreteUnivariateDistribution)
+            if minimum(nchild) < 0
+                throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
+            end
+        end
+        return new{P, R, O}(prob, branchrate, nchild)
+    end
+end;
+
+"""
+$(TYPEDEF)
+
 A structure to define a branching stochastic process.
 
 ## Fields
@@ -17,11 +54,7 @@ struct BranchingSDEProblem{P<:SciMLBase.SDEProblem, R<:Union{Real,Function}, O<:
     branchrate::R
     """The number of children to be created for each particle, which can be a non-negative integer or a [discrete distribution](https://juliastats.org/Distributions.jl/stable/univariate/#Discrete-Distributions) with non-negative support from which the number of children is sampled."""
     nchild::O
-    """
-        BranchingSDEProblem(prob::P, branchrate::R, nchild::O) where {P<:SciMLBase.SDEProblem, R<:Union{Real,Function}, O<:Union{Integer,DiscreteUnivariateDistribution}}
-
-    TBW
-    """
+   
     function BranchingSDEProblem(prob::P, branchrate::R, nchild::O) where {P<:SciMLBase.SDEProblem, R<:Union{Real,Function}, O<:Union{Integer,DiscreteUnivariateDistribution}}
         # if the branching rate is a constant, ensure it is a positive real number
         if isa(branchrate, Real) && branchrate <= 0
