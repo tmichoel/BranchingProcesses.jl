@@ -3,6 +3,8 @@ push!(LOAD_PATH,"../src/")
 using Documenter
 using BranchingProcesses
 
+ENV["GKSwstype"] = "100"
+
 makedocs(
     sitename = "BranchingProcesses",
     modules = [BranchingProcesses],
@@ -10,13 +12,18 @@ makedocs(
         prettyurls=true,
         canonical="https://tmichoel.github.io/FaSTLMMlight.jl",
         edit_link="main",
-        assets=String[]
+        assets=String[],
+        example_size_threshold=0,
+        size_threshold=nothing,
     ),
     pages=[
         "Introduction" => "index.md",
         "Solvers" => "solvers.md",
-        "Types" => "types.md"
-    ],   
+        "Types" => "types.md",
+        "Tutorials" => [
+            "Branching Brownian Motion" => "tutorials/branching-brownian-motion.md"
+        ]
+    ]
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.

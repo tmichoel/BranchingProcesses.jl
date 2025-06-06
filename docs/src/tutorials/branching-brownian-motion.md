@@ -1,0 +1,73 @@
+```@meta
+CurrentModule = BranchingProcesses
+```
+
+# Branching Brownian motion
+
+[Branching Brownian motion](https://wt.iam.uni-bonn.de/bovier/research/branching-brownian-motion/) (BBM) is the simplest example of a branching stochastic process. The process starts with a "root" particle undergoing Brownian motion. After an exponentially distributed lifetime, the particle dies and gives rise to a number of offspring particles, each evolving independently by the same mechanisms, with initial position given by the final position of the parent particle.
+
+## Setting up the problem
+
+In [SciML](https://docs.sciml.ai/Overview/stable/), a "[problem](https://docs.sciml.ai/SciMLBase/stable/interfaces/Problems/)" is the encoding of a mathematical problem into a numerically computable form. A branching stochastic process problem is defined mathematically by three ingredients:
+
+1. a stochastic process defining the single-particle dynamics,
+2. a branching rate,
+3. a branching mechanism.
+
+For BBM, the single-particle dynamics is Brownian motion, or more precisely, the [Wiener process](https://en.wikipedia.org/wiki/Wiener_process). It is defined in a distributionally exact manner in the [DiffEqNoiseProcess](https://docs.sciml.ai/DiffEqNoiseProcess/stable/) package, but for now the [`BranchingProcesses`](@ref) package only supports [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/) or [`JumpProblem`](https://docs.sciml.ai/JumpProcesses/stable/jump_types/#defining_jump_problem) types. Hence we define the Wiener process as the [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/):
+
+```@example bbm
+using DifferentialEquations
+f(u,p,t) = 0.0
+g(u,p,t) = 1.0
+u0 = 0.0
+tspan = (0.0, 5.0)
+bm = SDEProblem(f,g, u0, tspan)
+```
+
+The branching rate is a constant,
+
+```@example bbm
+λ = 1.0
+```
+
+and the branching mechanism, for now, is taken as deterministic splitting into two particles,
+
+```@example bbm
+nchild = 2
+```
+
+The three ingredients defining BBM can now be packed in a [`ConstantRateBranchingProblem`](@ref):
+
+```@example bbm
+import BranchingProcesses as BP
+bbm = BP.ConstantRateBranchingProblem(bm, λ, nchild)
+```
+
+[`BranchingProcesses`](@ref) does not yet support branching with non-constant, that is, time and/or state-dependent branching rates.
+
+!!! note "Timespan of the branching process"
+    By convention it is assumed that the timespan argument `tspan` used to define the single-particle dynamics problem is the requested timespan of the *entire* branching process. In other words, the branching process `bbm` will be simulated for the timespan:
+
+    ```@example bbm
+    bbm.prob.tspan
+    ```
+
+## Sampling a trajectory
+
+In [SciML](https://docs.sciml.ai/Overview/stable/), sampling a trajectory of a stochastic process is done by [solving the problem](https://docs.sciml.ai/DiffEqDocs/stable/basics/overview/#Solving-the-Problems). [`BranchingProcesses`](@ref) follows this convention, and hence we can run:
+
+```@example bbm
+using Random # hide
+Random.seed!(123) # hide
+tree = solve(bbm, EM(); dt=0.01)
+```
+
+The (optional) second argument in the [`solve`](@ref) function specifies the algorithm used to simulate the single-particle dynamics, see the [SDE solvers page](https://docs.sciml.ai/DiffEqDocs/stable/solvers/sde_solve/) for a full list of available algorithms. Any optional keyword arguments are also directly passed to the chosen single-particle simulation algorithm.
+
+The output of [`solve`](@ref) is a [`BranchingProcessSolution`](@ref), a tree structure where each node contains the solution (simulated trajector) of a particle in the branching process trajectory, as well as pointers to the solutions of its children.
+
+```@example bbm
+using Plots
+plot(tree; linewidth=2)
+```
