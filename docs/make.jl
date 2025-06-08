@@ -20,8 +20,8 @@ makedocs(
         "Introduction" => "index.md",
         "Solvers" => "solvers.md",
         "Types" => "types.md",
-        "Tutorials" => [
-            "Branching Brownian Motion" => "tutorials/branching-brownian-motion.md"
+        "Examples" => [
+            "Branching Brownian Motion" => "examples/branching-brownian-motion.md"
         ]
     ]
 )

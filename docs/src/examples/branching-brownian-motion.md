@@ -67,7 +67,27 @@ The (optional) second argument in the [`solve`](@ref) function specifies the alg
 
 The output of [`solve`](@ref) is a [`BranchingProcessSolution`](@ref), a tree structure where each node contains the solution (simulated trajector) of a particle in the branching process trajectory, as well as pointers to the solutions of its children.
 
+A [plot recipe](https://docs.juliaplots.org/latest/recipes/) is included in the [`BranchingProcesses`](@ref) package to plot the sampled trajectory using the standard `plot` command, which accepts all the usual arguments:
+
 ```@example bbm
 using Plots
 plot(tree; linewidth=2)
+```
+
+## Non-deterministic offspring distribution
+
+In the setup above, each particle gives rise to two offspring particles at the end of its lifetime, resulting in an exponential increase in the number of particles over time. Non-deterministic offspring distributions are also supported. For instance, in a [cell division](https://en.wikipedia.org/wiki/Cell_cycle) model, we can assume that cells divide (2 offspring), enter or remain is a [quiescent, non-dividing state](https://en.wikipedia.org/wiki/G0_phase) (1 offspring, itself), or die (0 offpsring), each with some probability. In such a scenario, we define the number of children `nchild` as a [univariate discrete distribution](https://juliastats.org/Distributions.jl/stable/univariate/#Discrete-Distributions):
+
+```@example bbm
+using Distributions
+nchild2 = DiscreteNonParametric([0, 1, 2], [0.2, 0.5, 0.3])
+```
+
+The branching process problem is constructed, solved, and plotted as before:
+
+```@example bbm
+Random.seed!(15) # hide
+bbm2 = BP.ConstantRateBranchingProblem(bm, λ, nchild2)
+tree2 = solve(bbm2, EM(); dt=0.01)
+plot(tree2; linewidth=2)
 ```
