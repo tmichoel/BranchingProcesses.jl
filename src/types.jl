@@ -68,5 +68,3 @@ AbstractTrees.children(node::BranchingProcessSolution) = node.children;
 Return the value of a `BranchingProcessSolution` node, defined as its final state value.
 """
 AbstractTrees.nodevalue(node::BranchingProcessSolution) = node.sol[end];
-
-
