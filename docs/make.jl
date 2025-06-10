@@ -21,7 +21,8 @@ makedocs(
         "Solvers" => "solvers.md",
         "Types" => "types.md",
         "Examples" => [
-            "Branching Brownian Motion" => "examples/branching-brownian-motion.md"
+            "Branching Brownian Motion" => "examples/branching-brownian-motion.md",
+            "Branching Ornstein-Uhlenbeck Process" => "examples/branching-oup.md"
         ]
     ]
 )
