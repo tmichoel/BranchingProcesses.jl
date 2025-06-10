@@ -67,12 +67,21 @@ The (optional) second argument in the [`solve`](@ref) function specifies the alg
 
 The output of [`solve`](@ref) is a [`BranchingProcessSolution`](@ref), a tree structure where each node contains the solution (simulated trajector) of a particle in the branching process trajectory, as well as pointers to the solutions of its children.
 
-A [plot recipe](https://docs.juliaplots.org/latest/recipes/) is included in the [`BranchingProcesses`](@ref) package to plot the sampled trajectory using the standard `plot` command, which accepts all the usual arguments:
+A [plot recipe](https://docs.juliaplots.org/latest/recipes/) is included in the [`BranchingProcesses`](@ref) package to plot the sampled trajectory using the standard `plot` command, which accepts the usual [attributes](https://docs.juliaplots.org/latest/generated/attributes_series/) for a series of type "path":
 
 ```@example bbm
 using Plots
 plot(tree; linewidth=2)
 ```
+
+Optionally, the branchpoints (birth times and values of each particle) can be included in the plot:
+
+```@example bbm
+using Plots
+plot(tree; linewidth=2, add_branchpoints=true)
+```
+
+The size, shape, color, etc. of the branchpoint markers can be changed using the usual [attributes](https://docs.juliaplots.org/latest/generated/attributes_series/)
 
 ## Non-deterministic offspring distribution
 
@@ -89,5 +98,5 @@ The branching process problem is constructed, solved, and plotted as before:
 Random.seed!(15) # hide
 bbm2 = BP.ConstantRateBranchingProblem(bm, λ, nchild2)
 tree2 = solve(bbm2, EM(); dt=0.01)
-plot(tree2; linewidth=2)
+plot(tree2; linewidth=2, add_branchpoints=true)
 ```
