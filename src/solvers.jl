@@ -10,7 +10,7 @@ function SciMLBase.solve(bp::T, alg::A=nothing; kwargs...) where {T<:ConstantRat
 end
 
 """
-    solve_and_split_constantrate(prob::T, λ::S, nchild::O, alg::A; kwargs...) where {T<:Union{SciMLBase.AbstractSDEProblem, SciMLBase.AbstractJumpProblem, SciMLBase.NoiseProblem}, S<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
+    solve_and_split_constantrate(prob::T, λ::S, nchild::O, alg::A; kwargs...) where {T<:SciMLBase.AbstractDEProblem, S<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
 
 Recursively solve a branching stochastic process where the single-particle dynamics is defined by the SDE problem `prob`, the branching rate is a constant `λ`, and the number of children `nchild` of each particle is either a non-negative integer or a discrete distribution from which the number of children is sampled. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample the trajectory of each particle.
 
@@ -22,21 +22,21 @@ function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=
     # sample the lifetime of the current particle
     τ = sample_lifetime_constantrate(branchrate)
 
+    # get the timespan of the problem
+    tspan = get_timespan(prob)
     # if the lifetime is larger than the final time, solve until the final time and return a node without children; otherwise solve until the lifetime and return a node with recursively solved children for the remaining time.
-    if τ >= prob.tspan[2] - prob.tspan[1]
+    if τ >= tspan[2] - tspan[1]
         # sample a trajectory for the current particle with its given initial condition and time span
         sol = solve(prob, alg; kwargs...)
         # return a BranchingProcessSolution with the solution for the current branch and no children
         return BranchingProcessSolution{typeof(sol)}(sol, [])
     else
         # remake the problem for the current particle with the time span set to the sampled lifetime
-        #currentprob = remake(prob, tspan=(prob.tspan[1], prob.tspan[1]+τ));
-        currentprob = remake_initial_condition(prob,(prob.tspan[1], prob.tspan[1]+τ));
+        currentprob = remake_initial_condition(prob,(tspan[1], tspan[1]+τ));
         # sample a trajectory for the current particle
         sol = solve(currentprob, alg; kwargs...)
         # remake the problem for the children with the time span set to the remaining time and the initial value set to the final state of the solved particle
-        #newprob = remake(prob, u0=sol.u[end], tspan=(prob.tspan[1]+τ, prob.tspan[2]));
-        newprob = remake_initial_condition(prob, (prob.tspan[1]+τ, prob.tspan[2]), sol.u[end]);
+        newprob = remake_initial_condition(prob, (tspan[1]+τ, tspan[2]), sol.u[end]);
         # sample the number of children
         nc = sample_offspring(nchild)
         # return a BranchingProcessSolution with the solution for the current branch and recursively solve its children
@@ -45,24 +45,31 @@ function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=
 end
 
 function remake_initial_condition(prob::P, tspan, u0=nothing) where P<:SciMLBase.AbstractDEProblem
-    if typeof(prob) <: Union{SciMLBase.AbstractSDEProblem, SciMLBase.AbstractJumpProblem}
+    if typeof(prob) <: SciMLBase.AbstractSDEProblem
         if u0 === nothing
             return remake(prob, tspan=tspan)
         else
-            # If u0 is provided, remake the problem with the new initial condition
             return remake(prob, u0=u0, tspan=tspan)
         end
-    # elseif typeof(prob) <: SciMLBase.NoiseProblem
-    #     W = prob.noise;
-    #     W.t = [tspan[1]]
-    #     if u0 !== nothing
-    #         # If u0 is provided, set the initial condition of the noise process
-    #         W.u = [u0]
-    #     end
-    #     return NoiseProblem(W, tspan)
+    elseif typeof(prob) <: SciMLBase.AbstractJumpProblem
+        if u0 === nothing
+            return remake(prob, prob=remake(prob.prob, tspan=tspan))
+        else
+            return remake(prob, prob=remake(prob.prob, u0=u0, tspan=tspan))
+        end
     else
         throw(ArgumentError("prob must be an SDEProblem or JumpProblem; NoiseProblems are not supported yet."))
     end
+end
+
+function get_timespan(prob::P) where P<:SciMLBase.AbstractDEProblem
+    if typeof(prob) <: SciMLBase.AbstractSDEProblem
+        return prob.tspan
+    elseif typeof(prob) <: SciMLBase.AbstractJumpProblem
+        return prob.prob.tspan
+    else
+        throw(ArgumentError("prob must be an SDEProblem or JumpProblem; NoiseProblems are not supported yet."))
+    end 
 end
 
 """
