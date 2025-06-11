@@ -83,3 +83,17 @@ plot(tree; linewidth=2, add_branchpoints=true)
 ```
 
 We observe that the system now did not have sufficient time to equilibrate within the typical life-time of a cell, and the population as a whole is shifted towards, that is, remembers, its initial state.
+
+That the memory is due to the slow return to steady-state of the fluctuations and not the value of the initial state can be seen by starting the same problem in the steady state itself:
+
+```@example oup
+α = 0.5
+u0 = μ
+oup = SDEProblem(f,g, u0, tspan, (μ, α, σ))
+boup = BP.ConstantRateBranchingProblem(oup, λ, nchild)
+Random.seed!(123)
+tree = solve(boup, EM(); dt=0.01)
+plot(tree; linewidth=2, add_branchpoints=true)
+```
+
+Again we observe a shifted distribution to large fluctuations early in the expansion.
