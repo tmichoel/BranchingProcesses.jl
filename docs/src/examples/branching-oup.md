@@ -96,4 +96,4 @@ tree = solve(boup, EM(); dt=0.01)
 plot(tree; linewidth=2, add_branchpoints=true)
 ```
 
-Again we observe a shifted distribution to large fluctuations early in the expansion.
+Again we observe a shifted distribution due to large fluctuations early in the expansion.
