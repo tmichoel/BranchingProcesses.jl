@@ -1,7 +1,7 @@
 name = "BranchingProcesses"
 uuid = "04adb457-7d2c-431a-93f1-03b44ce12db8"
 authors = ["Tom Michoel"]
-version = "0.0.1-DEV"
+version = "0.0.1"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
