@@ -4,7 +4,7 @@
 [![Build Status](https://github.com/tmichoel/BranchingProcesses.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/tmichoel/BranchingProcesses.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
 
-[BranchingProcesses](https://github.com/tmichoel/BranchingProcesses.jl) is a Julia package for simulation and parameter inference in branching stochastic processes, also known as branching particle systems. 
+[BranchingProcesses](https://github.com/tmichoel/BranchingProcesses.jl) is a Julia package for modelling branching stochastic processes, also known as branching particle systems. 
 
 Branching stochastic processes are processes where "particles" (which could represent cells, individuals, or species depending on the context) have one or more degrees of freedom $X(t)$ whose dynamics is described by a stationary Markov process. After a certain lifetime, a particle splits into $k\geq 0$ identical, independent offspring particles with probability $p_k$. This process is repeated indefinitely, producing a collection of $N(t)$ particles at time $t$. Splitting happens with a rate function $\gamma(x,\tau)$ that may depend on the current state $x$ and age $\tau$ of the particle.
 
