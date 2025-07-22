@@ -24,7 +24,8 @@ makedocs(
             "Branching Brownian motion" => "examples/branching-brownian-motion.md",
             "Branching Ornstein-Uhlenbeck process" => "examples/branching-oup.md",
             "Branching birth-death process" => "examples/branching-birth-death.md",
-            "Multi-variable branching processes" => "examples/multi-variable-processes.md",
+            "AbstractTrees interface" => "examples/abstracttrees-interface.md",
+            "Multi-variable branching processes" => "examples/multi-variable-processes.md"
         ]
     ]
 )
