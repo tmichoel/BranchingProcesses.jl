@@ -22,5 +22,6 @@ using SciMLBase
 include("types.jl")
 include("solvers.jl")
 include("plot_recipes.jl")
+include("utils.jl")
 
 end
