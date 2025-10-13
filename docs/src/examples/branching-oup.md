@@ -59,7 +59,7 @@ To sample a tranjectory of the branching process, we call the [`solve`](@ref) fu
 ```@example oup
 using Random
 Random.seed!(123)
-tree = solve(boup, EM(); dt=0.01)
+tree = solve(boup, EM(); dt=0.01);
 plot(tree; linewidth=2, add_branchpoints=true)
 ```
 

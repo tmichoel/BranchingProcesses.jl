@@ -55,3 +55,9 @@ Because it is common to need the final value of a particle, this has been implem
 ```@example bbm
 tip_values == [nodevalue(node) for node in Leaves(tree)] 
 ```
+
+An even shorter short-cut is to call the function [`tip_values`](@ref):
+
+```@example bbm
+tip_values = BP.tip_values(tree)
+```

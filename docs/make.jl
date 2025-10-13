@@ -10,7 +10,7 @@ makedocs(
     modules = [BranchingProcesses],
     format = Documenter.HTML(;
         prettyurls=true,
-        canonical="https://tmichoel.github.io/FaSTLMMlight.jl",
+        canonical="https://tmichoel.github.io/BranchingProcesses.jl.git",
         edit_link="main",
         assets=String[],
         example_size_threshold=0,
@@ -25,7 +25,8 @@ makedocs(
             "Branching Ornstein-Uhlenbeck process" => "examples/branching-oup.md",
             "Branching birth-death process" => "examples/branching-birth-death.md",
             "AbstractTrees interface" => "examples/abstracttrees-interface.md",
-            "Multi-variable branching processes" => "examples/multi-variable-processes.md"
+            "Multi-variable branching processes" => "examples/multi-variable-processes.md",
+            "Fluctuation experiment" => "examples/fluctuation-experiment.md"
         ]
     ]
 )
