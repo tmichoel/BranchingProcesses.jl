@@ -44,6 +44,11 @@ function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=
     end
 end
 
+"""
+    remake_initial_condition(prob::P, tspan, u0=nothing) where P<:SciMLBase.AbstractDEProblem
+
+Remake the problem `prob` with a new timespan `tspan` and, optionally, a new initial condition `u0`. Works for SDEProblems and JumpProblems. Throws an error for NoiseProblems.
+"""
 function remake_initial_condition(prob::P, tspan, u0=nothing) where P<:SciMLBase.AbstractDEProblem
     if typeof(prob) <: SciMLBase.AbstractSDEProblem
         if u0 === nothing
@@ -62,6 +67,11 @@ function remake_initial_condition(prob::P, tspan, u0=nothing) where P<:SciMLBase
     end
 end
 
+"""
+    get_timespan(prob::P) where P<:SciMLBase.AbstractDEProblem
+
+Get the timespan of the problem `prob`. Works for SDEProblems and JumpProblems. Throws an error for NoiseProblems.
+"""
 function get_timespan(prob::P) where P<:SciMLBase.AbstractDEProblem
     if typeof(prob) <: SciMLBase.AbstractSDEProblem
         return prob.tspan
