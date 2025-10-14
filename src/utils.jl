@@ -13,18 +13,28 @@ end
 """
     reduce_tree(tree::BranchingProcessSolution)
 
-Reduce [`BranchingProcessSolution`](@ref) `tree` to an ordinary time series by combining the values of all particles alive at each time point. The timespan of the resulting time series is from the initial time of the root to the latest final time of any of the leaves of the input `tree`; the time points are spaced by `dt` (default: `0.01`). The function `reduction` (default: `sum`) is used to combine the values of all particles alive at each time point.
-
-!!! warning
-    The `reduction` function must be computable in an iterative manner, that is, it must be possible to compute the value of `reduction(a, b)` given only the values of `a` and `b`, without needing to know the values of all previous arguments. Examples of such functions are `sum`, `prod`, `maximum`, and `minimum`. Functions that are not computable in an iterative manner include, for example, `mean` and `median`. 
+Reduce [`BranchingProcessSolution`](@ref) `tree` to an ordinary time series by combining the values of all particles alive at each time point. The timespan of the resulting time series is from the initial time of the root to the latest final time of any of the leaves of the input `tree`; the time points are spaced by `dt` (default: `0.01`). The function `transform` (default: `identity`) is applied to the values of each particle before combining them. The function `reduction` (either `sum` (default) or `prod`) is used to combine the (transformed) values of all particles alive at each time point.
 """
-function reduce_tree(tree::BranchingProcessSolution; reduction=sum, dt=0.01)
+function reduce_tree(tree::BranchingProcessSolution; transform=identity, reduction=sum, dt=0.01)
     tspan = get_timespan(tree)
     trange = tspan[1]:dt:tspan[2]
     u = zeros(length(trange),length(tree.sol.u[1]))
     for node in PostOrderDFS(tree)
-
+        for (ti, t) in enumerate(trange)
+            if t >= node.sol.t[1] && t <= node.sol.t[end]
+                #ui = SciMLBase.findfirst(node.sol.t, t)
+                # if reduction === sum
+                #     u[ti, :] .+= transform(node.sol.u[ui])
+                # elseif reduction === prod
+                #     u[ti, :] .= u[ti, :].*transform(node.sol.u[ui])
+                # else
+                #     throw(ArgumentError("reduction must be either sum or prod"))
+                # end
+                u[ti, :] .+= transform(node.sol(t))
+            end
+        end
     end
+    return collect(trange), u
 end
 
 
