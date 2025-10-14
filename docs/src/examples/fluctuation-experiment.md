@@ -6,7 +6,9 @@ CurrentModule = BranchingProcesses
 
 In a [Luria-Delbrück experiment](https://en.wikipedia.org/wiki/Luria%E2%80%93Delbr%C3%BCck_experiment), here called a fluctuation experiment, multiple clones are grown, each starting from a different single cell.
 
-To simulate fluctuation experiments, the [`BranchingProcesses`](@ref) package supports [SciML's parallel ensemble simulation](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/) methods.
+To simulate fluctuation experiments, the [`BranchingProcesses`](@ref) package supports [SciML's parallel ensemble simulation](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/) methods.[^1]
+
+[^1]: It would be more accurate to say that SciML is providing the support: because the [`BranchingProcesses`](@ref) package implements [`SciMLBase.solve`](https://docs.sciml.ai/SciMLBase/stable/interfaces/Init_Solve/), parallel ensemble simulations are supported out of the box.
 
 Let's model the actual [Luria-Delbrück experiment](https://en.wikipedia.org/wiki/Luria%E2%80%93Delbr%C3%BCck_experiment) as a [birth-death process](./branching-birth-death.md) where a cell can switch from  wild-type to mutant, without any back-mutations:
 
@@ -49,7 +51,7 @@ We can obtain the number of cells and the number of mutants in each clone using 
 ```@example ensemble
 cell_counts = [sum(BP.tip_values(t)) for t in ensemble_tree];
 total_cell_counts = [sum(x) for x in cell_counts];
-mutant_cell_counts = [sum(x[2]) for x in cell_counts];
+mutant_cell_counts = [x[2] for x in cell_counts];
 ```
 
 ```@example ensemble
