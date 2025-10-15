@@ -3,10 +3,13 @@
 
 Solve a branching stochastic process with constant branching rate defined by the `ConstantRateBranchingProblem` `bp`. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample trajectories of the underlying SDE problem.
 
+Returns a [`BranchingProcessSolution`](@ref) containing the problem definition and the resulting tree structure.
+
 See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_split_constantrate`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
 function SciMLBase.solve(bp::T, alg::A=nothing; kwargs...) where {T<:ConstantRateBranchingProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
-    return solve_and_split_constantrate(bp.prob, bp.branchrate, bp.nchild, alg; kwargs...)
+    tree = solve_and_split_constantrate(bp.prob, bp.branchrate, bp.nchild, alg; kwargs...)
+    return BranchingProcessSolution(bp, tree; alg=alg, retcode=SciMLBase.ReturnCode.Success)
 end
 
 """
@@ -15,6 +18,8 @@ end
 Recursively solve a branching stochastic process where the single-particle dynamics is defined by the SDE problem `prob`, the branching rate is a constant `λ`, and the number of children `nchild` of each particle is either a non-negative integer or a discrete distribution from which the number of children is sampled. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample the trajectory of each particle.
 
 The timespan of the problem `prob` defines the total time interval for the branching process. A lifetime for the first particle is sampled from an exponential distribution with rate `λ`. If the lifetime is larger than the total time interval, the problem is solved until the end of the original interval and a solution node is returned without children. If the lifetime is smaller than the total time interval, the problem is solved until the sampled lifetime, and a solution node is returned with recursively solved children for the remaining time interval.
+
+Returns a [`BranchingProcessNode`](@ref) representing the tree structure.
 
 See also: [SDE problems](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/), [`sample_lifetime_constantrate`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
@@ -28,8 +33,8 @@ function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=
     if τ >= tspan[2] - tspan[1]
         # sample a trajectory for the current particle with its given initial condition and time span
         sol = solve(prob, alg; kwargs...)
-        # return a BranchingProcessSolution with the solution for the current branch and no children
-        return BranchingProcessSolution{typeof(sol)}(sol, [])
+        # return a BranchingProcessNode with the solution for the current branch and no children
+        return BranchingProcessNode(sol, BranchingProcessNode{typeof(sol)}[])
     else
         # remake the problem for the current particle with the time span set to the sampled lifetime
         currentprob = remake_initial_condition(prob,(tspan[1], tspan[1]+τ));
@@ -39,8 +44,9 @@ function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=
         newprob = remake_initial_condition(prob, (tspan[1]+τ, tspan[2]), sol.u[end]);
         # sample the number of children
         nc = sample_offspring(nchild)
-        # return a BranchingProcessSolution with the solution for the current branch and recursively solve its children
-        return BranchingProcessSolution(sol, [solve_and_split_constantrate(newprob, branchrate, nchild, alg; kwargs...) for _ in 1:nc])
+        #  return a BranchingProcessNode with the solution for the current branch and recursively solve its children
+        children = [solve_and_split_constantrate(newprob, branchrate, nchild, alg; kwargs...) for _ in 1:nc]
+        return BranchingProcessNode(sol, children)
     end
 end
 
