@@ -27,9 +27,9 @@ makedocs(
             "Branching birth-death process" => "examples/branching-birth-death.md",
             "AbstractTrees interface" => "examples/abstracttrees-interface.md",
             "Multi-variable branching processes" => "examples/multi-variable-processes.md",
-            "Fluctuation experiment" => "examples/fluctuation-experiment.md"
+            "Ensemble simulations" => "examples/ensemble-simulation.md"
+            ]    
         ]
-    ]
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.

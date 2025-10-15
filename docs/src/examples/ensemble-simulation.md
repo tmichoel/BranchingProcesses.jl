@@ -2,7 +2,7 @@
 CurrentModule = BranchingProcesses
 ```
 
-# Fluctuation experiments
+# Ensemble simulations
 
 In a [Luria-Delbrück experiment](https://en.wikipedia.org/wiki/Luria%E2%80%93Delbr%C3%BCck_experiment), here called a fluctuation experiment, multiple clones are grown, each starting from a different single cell.
 
