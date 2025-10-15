@@ -1,12 +1,13 @@
 name = "BranchingProcesses"
 uuid = "04adb457-7d2c-431a-93f1-03b44ce12db8"
-authors = ["Tom Michoel"]
 version = "0.0.2"
+authors = ["Tom Michoel"]
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+LinearInterpolations = "b20c7882-2490-4592-a606-fbbfe9e745e8"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
@@ -14,6 +15,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 AbstractTrees = "0.4.5"
 Distributions = "0.25.119"
 DocStringExtensions = "0.9.4"
+LinearInterpolations = "0.1.4"
 RecipesBase = "1.3.4"
 SciMLBase = "2.89.1"
 julia = "1.6.7"
