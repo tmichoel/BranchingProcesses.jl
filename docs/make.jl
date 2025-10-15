@@ -27,7 +27,8 @@ makedocs(
             "Branching birth-death process" => "examples/branching-birth-death.md",
             "AbstractTrees interface" => "examples/abstracttrees-interface.md",
             "Multi-variable branching processes" => "examples/multi-variable-processes.md",
-            "Ensemble simulations" => "examples/ensemble-simulation.md"
+            "Ensemble simulations" => "examples/ensemble-simulation.md",
+            "Tree reduction" => "examples/tree-reduction.md"
             ]    
         ]
 )
