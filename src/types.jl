@@ -191,5 +191,5 @@ function ReducedTreeSolution(u, t; prob=nothing, alg=nothing, dense=false,
 end
 
 # Required SciMLBase interface methods
-SciMLBase.has_analytic(::ReducedTreeSolution) = false
-SciMLBase.has_stats(::ReducedTreeSolution) = false
+#SciMLBase.has_analytic(::ReducedTreeSolution) = false
+#SciMLBase.has_stats(::ReducedTreeSolution) = false
