@@ -17,7 +17,7 @@ using Distributions
 using DocStringExtensions
 using RecipesBase
 using SciMLBase
-using LinearInterpolations
+using DataInterpolations
 
 # include files
 include("types.jl")
