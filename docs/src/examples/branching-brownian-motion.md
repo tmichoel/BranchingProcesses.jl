@@ -60,7 +60,7 @@ In [SciML](https://docs.sciml.ai/Overview/stable/), sampling a trajectory of a s
 ```@example bbm
 using Random # hide
 Random.seed!(123) # hide
-tree = solve(bbm, EM(); dt=0.01)
+sol = solve(bbm, EM(); dt=0.01);
 ```
 
 The (optional) second argument in the [`solve`](@ref) function specifies the algorithm used to simulate the single-particle dynamics, see the [SDE solvers page](https://docs.sciml.ai/DiffEqDocs/stable/solvers/sde_solve/) for a full list of available algorithms. Any optional keyword arguments are also directly passed to the chosen single-particle simulation algorithm.
@@ -71,17 +71,22 @@ A [plot recipe](https://docs.juliaplots.org/latest/recipes/) is included in the 
 
 ```@example bbm
 using Plots
-plot(tree; linewidth=2)
+plot(sol; linewidth=2)
 ```
 
 Optionally, the branchpoints (birth times and values of each particle) can be included in the plot:
 
 ```@example bbm
-using Plots
-plot(tree; linewidth=2, add_branchpoints=true)
+plot(sol; linewidth=2, branchpoints=true)
 ```
 
 The size, shape, color, etc. of the branchpoint markers can be changed using the usual [attributes](https://docs.juliaplots.org/latest/generated/attributes_series/)
+
+The plot recipe for a [`BranchingProcessSolution`](@ref) calls another recipe for a [`BranchingProcessNode`](@ref) on the solution's root node `sol.tree`. Hence we can plot any subtree of the solution by plotting a specific node, for instance:
+
+```@example bbm
+plot(sol.tree.children[1].children[1]; linewidth=2, branchpoints=true)
+```
 
 ## Non-deterministic offspring distribution
 
@@ -97,6 +102,6 @@ The branching process problem is constructed, solved, and plotted as before:
 ```@example bbm
 Random.seed!(15) # hide
 bbm2 = BP.ConstantRateBranchingProblem(bm, λ, nchild2)
-tree2 = solve(bbm2, EM(); dt=0.01)
-plot(tree2; linewidth=2, add_branchpoints=true)
+sol2 = solve(bbm2, EM(); dt=0.01);
+plot(sol2; linewidth=2, branchpoints=true)
 ```

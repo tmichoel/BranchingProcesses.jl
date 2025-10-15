@@ -59,8 +59,8 @@ To sample a tranjectory of the branching process, we call the [`solve`](@ref) fu
 ```@example oup
 using Random
 Random.seed!(123)
-tree = solve(boup, EM(); dt=0.01);
-plot(tree; linewidth=2, add_branchpoints=true)
+sol = solve(boup, EM(); dt=0.01);
+plot(sol; linewidth=2, branchpoints=true)
 ```
 
 We observe that after a few generations, all cells fluctuate around their steady state value ``\mu=2.0``.
@@ -78,8 +78,8 @@ To illustrate this phenomenon, we set the same random seed as above (to ensure e
 oup = SDEProblem(f,g, u0, tspan, (μ, α, σ))
 boup = BP.ConstantRateBranchingProblem(oup, λ, nchild)
 Random.seed!(123)
-tree = solve(boup, EM(); dt=0.01)
-plot(tree; linewidth=2, add_branchpoints=true)
+sol = solve(boup, EM(); dt=0.01)
+plot(sol; linewidth=2, branchpoints=true)
 ```
 
 We observe that the system now did not have sufficient time to equilibrate within the typical life-time of a cell, and the population as a whole is shifted towards, that is, remembers, its initial state.
@@ -92,8 +92,8 @@ u0 = μ
 oup = SDEProblem(f,g, u0, tspan, (μ, α, σ))
 boup = BP.ConstantRateBranchingProblem(oup, λ, nchild)
 Random.seed!(123)
-tree = solve(boup, EM(); dt=0.01)
-plot(tree; linewidth=2, add_branchpoints=true)
+sol = solve(boup, EM(); dt=0.01)
+plot(sol; linewidth=2, branchpoints=true)
 ```
 
 Again we observe a shifted distribution due to large fluctuations early in the expansion.

@@ -58,17 +58,17 @@ treeheight(tree)
 If we plot the solution, by default the trajectory for the first variable is shown:
 
 ```@example mm
-plot(tree; add_branchpoints=true)
+plot(tree; branchpoints=true)
 ```
 
 Because the plot recipe piggybacks on the [plot recipe for differential equation solutions](https://docs.sciml.ai/DiffEqDocs/stable/basics/plot/), variables for plotting can be chose in [the same way](https://docs.sciml.ai/DiffEqDocs/stable/basics/plot/#plot_vars):
 
 ```@example mm
-plot(tree; add_branchpoints=true, idxs=[2])
+plot(tree; branchpoints=true, idxs=[2])
 ```
 
 It is possible to plot multiple variables in the same plot, but since branching can result in many particles and line color is already used to distinguish different particles in the tree, this is not particularly illuminating:
 
 ```@example mm
-plot(tree; add_branchpoints=true, idxs=[1,2])
+plot(tree; branchpoints=true, idxs=[1,2])
 ```
