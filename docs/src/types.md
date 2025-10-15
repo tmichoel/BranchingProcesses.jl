@@ -13,6 +13,8 @@ ConstantRateBranchingProblem
 
 ```@docs
 BranchingProcessSolution
+BranchingProcessNode
 AbstractTrees.children
 AbstractTrees.nodevalue
+ReducedBranchingProcessSolution
 ```
