@@ -2,7 +2,7 @@
 
 julia_version = "1.12.0"
 manifest_format = "2.0"
-project_hash = "421e45282548880a6c3f8e2bb8f005ac6a388ab2"
+project_hash = "903738ec27010836e44cf06d08709fa8c44de114"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "27cecae79e5cc9935255f90c53bb831cc3c870d7"
@@ -238,7 +238,7 @@ weakdeps = ["ChainRulesCore", "ForwardDiff"]
 deps = ["AbstractTrees", "Distributions", "DocStringExtensions", "RecipesBase", "SciMLBase"]
 path = ".."
 uuid = "04adb457-7d2c-431a-93f1-03b44ce12db8"
-version = "0.0.1"
+version = "0.0.2"
 
 [[deps.Bzip2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
