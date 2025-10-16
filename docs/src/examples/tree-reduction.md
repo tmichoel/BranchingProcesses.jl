@@ -39,8 +39,8 @@ Sample and plot a tree:
 using Random # hide
 Random.seed!(123) # hide
 using Plots, LaTeXStrings
-tree = BP.solve(bjprob,  SSAStepper());
-plot(tree; linewidth=2, add_branchpoints=true)
+sol = BP.solve(bjprob,  SSAStepper());
+plot(sol; linewidth=2, branchpoints=true)
 ```
 
 ## Obtaining a reduced time series
@@ -48,7 +48,7 @@ plot(tree; linewidth=2, add_branchpoints=true)
 By default, [`reduce_tree`](@ref) sums the values of all cells alive at a given time, starting from the initial time of the root cell and stopping at the final time of the last living cell, with a time step of `dt`:
 
 ```@example tr
-t,u = BP.reduce_tree(tree; dt=0.01)
+sol_red = BP.reduce_tree(sol; dt=0.01)
 plot(t, u, label=L"\sum_{i=1}^{N(t)} X_i(t)")
 ```
 

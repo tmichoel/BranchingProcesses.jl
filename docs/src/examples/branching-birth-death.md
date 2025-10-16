@@ -57,6 +57,6 @@ To sample a tranjectory of the branching process, we call the [`solve`](@ref) fu
 ```@example bd
 using Random # hide
 Random.seed!(123) # hide
-tree = BP.solve(bjprob,  SSAStepper());
-plot(tree; linewidth=2, add_branchpoints=true)
+sol = BP.solve(bjprob,  SSAStepper());
+plot(sol; linewidth=2, branchpoints=true)
 ```

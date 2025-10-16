@@ -182,7 +182,7 @@ function ReducedTreeSolution(u, t; prob=nothing, alg=nothing, dense=false,
     A = typeof(alg)
     
     # Create simple linear interpolation
-    interp = LinearInterpolation(t, u)
+    interp = LinearInterpolation(u, t)
     IType = typeof(interp)
     
     return ReducedTreeSolution{T,N,uType,tType,P,A,IType}(
@@ -191,5 +191,5 @@ function ReducedTreeSolution(u, t; prob=nothing, alg=nothing, dense=false,
 end
 
 # Required SciMLBase interface methods
-SciMLBase.has_analytic(::ReducedTreeSolution) = false
-SciMLBase.has_stats(::ReducedTreeSolution) = false
+#SciMLBase.has_analytic(::ReducedTreeSolution) = false
+#SciMLBase.has_stats(::ReducedTreeSolution) = false

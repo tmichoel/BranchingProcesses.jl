@@ -43,13 +43,13 @@ ensemble_bjprob = EnsembleProblem(bjprob)
 Then [solve the problem](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/#Solving-the-Problem):
 
 ```@example ensemble
-ensemble_tree = solve(ensemble_bjprob, SSAStepper(), EnsembleThreads(), trajectories=100)
+ensemble_sol = solve(ensemble_bjprob, SSAStepper(), EnsembleThreads(), trajectories=100)
 ```
 
 We can obtain the number of cells and the number of mutants in each clone using the [`tip_values`](@ref) function:
 
 ```@example ensemble
-cell_counts = [sum(BP.tip_values(t)) for t in ensemble_tree];
+cell_counts = [sum(BP.tip_values(sol)) for sol in ensemble_sol];
 total_cell_counts = [sum(x) for x in cell_counts];
 mutant_cell_counts = [x[2] for x in cell_counts];
 ```

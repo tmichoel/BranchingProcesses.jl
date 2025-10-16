@@ -1,4 +1,8 @@
-@recipe function f(tree::T; add_branchpoints=false, idxs=[1]) where T <: BranchingProcessSolution
+@recipe function f(sol::T) where T <: BranchingProcessSolution
+    sol.tree
+end
+
+@recipe function f(tree::T; branchpoints=false, idxs=[1]) where T <: BranchingProcessNode
     # set a default value for some attributes
     xlabel --> "t"
     ylabel --> "u"
@@ -19,7 +23,7 @@
     end
    
     # optionally add markers at the branch points for all variables in idxs
-    if add_branchpoints
+    if branchpoints
         for k in idxs
             @series begin
                 seriestype := :scatter
