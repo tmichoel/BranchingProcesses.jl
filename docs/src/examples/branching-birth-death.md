@@ -13,7 +13,7 @@ If we assume molecules are produced and degraded one at a time, we obtain a [bir
 We first define the single-particle, in our case single-cell, dynamics as a [reaction network](https://docs.sciml.ai/Catalyst/stable/model_creation/dsl_basics/):
 
 ```@example bd
-using Catalyst
+#using Catalyst
 rn = @reaction_network begin
     kp, 0 --> X
     kd, X --> 0
@@ -25,7 +25,7 @@ where `kp` and `kd` are the parameters of the model, respectively the production
 As explained in the [Catalyst tutorials](https://docs.sciml.ai/Catalyst/stable/introduction_to_catalyst/catalyst_for_new_julia_users/), we can define a [JumpProcess](https://docs.sciml.ai/JumpProcesses/stable/) to simulate this reaction network as follows:
 
 ```@example bd
-using DifferentialEquations, JumpProcesses
+#using DifferentialEquations, JumpProcesses
 u0 = [200]
 tspan = (0.0, 3.0)
 p = [:kp => 50.0, :kd => 0.25]
@@ -36,7 +36,7 @@ jprob = JumpProblem(jinput)
 A trajectory for a single cell can be sampled and plotted:
 
 ```@example bd
-using Plots
+#using Plots
 jsol = solve(jprob, SSAStepper())
 plot(jsol)
 ```
@@ -44,10 +44,9 @@ plot(jsol)
 A branching jump problem is set up as in the [branching Brownian motion](./branching-brownian-motion.md) and [branching Ornstein-Uhlenbeck process](./branching-oup.md) examples:
 
 ```@example bd
-import BranchingProcesses as BP
 λ = 1.0         # branching rate
 nchild = 2      # deterministic number of offspring
-bjprob = BP.ConstantRateBranchingProblem(jprob, λ, nchild);
+bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
 ```
 
 ## Sampling a trajectory
@@ -55,8 +54,8 @@ bjprob = BP.ConstantRateBranchingProblem(jprob, λ, nchild);
 To sample a tranjectory of the branching process, we call the [`solve`](@ref) function, resulting in a [`BranchingProcessSolution`](@ref) tree, that can be visualized using the standard plot function:
 
 ```@example bd
-using Random # hide
+#using Random # hide
 Random.seed!(123) # hide
-sol = BP.solve(bjprob,  SSAStepper());
+sol = solve(bjprob,  SSAStepper());
 plot(sol; linewidth=2, branchpoints=true)
 ```

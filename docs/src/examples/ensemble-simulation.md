@@ -14,7 +14,7 @@ Let's model the actual [Luria-Delbrück experiment](https://en.wikipedia.org/wik
 
 
 ```@example ensemble
-using DifferentialEquations, JumpProcesses, Catalyst
+# using DifferentialEquations, JumpProcesses, Catalyst
 rn = @reaction_network begin
     μ, W --> M
 end
@@ -28,10 +28,9 @@ jprob = JumpProblem(rn, dprob, Direct())
 Define a branching process problem:
 
 ```@example ensemble
-import BranchingProcesses as BP
 λ = 1.0
 nchild = 2
-bjprob = BP.ConstantRateBranchingProblem(jprob, λ, nchild);
+bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
 ```
 
 To simulate a fluctuation experiment with 100 clones, first set up an [EnsembleProblem](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/#Building-a-Problem):
@@ -49,13 +48,13 @@ ensemble_sol = solve(ensemble_bjprob, SSAStepper(), EnsembleThreads(), trajector
 We can obtain the number of cells and the number of mutants in each clone using the [`tip_values`](@ref) function:
 
 ```@example ensemble
-cell_counts = [sum(BP.tip_values(sol)) for sol in ensemble_sol];
+cell_counts = [sum(tip_values(sol)) for sol in ensemble_sol];
 total_cell_counts = [sum(x) for x in cell_counts];
 mutant_cell_counts = [x[2] for x in cell_counts];
 ```
 
 ```@example ensemble
-using Plots
+# using Plots
 histogram(total_cell_counts,label="",xlabel="Total cell counts", ylabel="Number of clones")
 ```
 

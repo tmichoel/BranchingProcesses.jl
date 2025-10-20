@@ -11,8 +11,7 @@ A [`BranchingProcessSolution`](@ref) is an [AbstractTrees](https://juliacollecti
 Useful tree statistics can be obtained directly from the [AbstractTrees](https://juliacollections.github.io/AbstractTrees.jl/) interface. To illustrate this, consider the example of [branching Brownian motion](branching-brownian-motion.md):
 
 ```@example bbm
-import BranchingProcesses as BP
-using DifferentialEquations
+#using DifferentialEquations
 f(u,p,t) = 0.0
 g(u,p,t) = 1.0
 u0 = 0.0
@@ -20,15 +19,15 @@ tspan = (0.0, 5.0)
 bm = SDEProblem(f,g, u0, tspan)
 λ = 1.0
 nchild = 2
-bbm = BP.ConstantRateBranchingProblem(bm, λ, nchild)
-using Random # hide
+bbm = ConstantRateBranchingProblem(bm, λ, nchild)
+#using Random # hide
 Random.seed!(123) # hide
 sol = solve(bbm, EM(); dt=0.01)
 ```
 The number of particles alive at the end of the sampled trajectory is:
 
 ```@example bbm
-using AbstractTrees
+#using AbstractTrees
 num_alive = treebreadth(sol)
 ```
 
@@ -65,5 +64,5 @@ tip_values == [nodevalue(node) for node in Leaves(sol)]
 An even shorter short-cut is to call the function [`tip_values`](@ref):
 
 ```@example bbm
-tip_values = BP.tip_values(sol)
+tip_values = tip_values(sol)
 ```

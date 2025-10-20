@@ -17,7 +17,7 @@ In [SciML](https://docs.sciml.ai/Overview/stable/), a "[problem](https://docs.sc
 For BBM, the single-particle dynamics is Brownian motion, or more precisely, the [Wiener process](https://en.wikipedia.org/wiki/Wiener_process). It is defined in a distributionally exact manner in the [DiffEqNoiseProcess](https://docs.sciml.ai/DiffEqNoiseProcess/stable/) package, but for now the [`BranchingProcesses`](@ref) package only supports [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/) or [`JumpProblem`](https://docs.sciml.ai/JumpProcesses/stable/jump_types/#defining_jump_problem) types. Hence we define the Wiener process as the [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/):
 
 ```@example bbm
-using DifferentialEquations
+#using DifferentialEquations
 f(u,p,t) = 0.0
 g(u,p,t) = 1.0
 u0 = 0.0
@@ -40,8 +40,7 @@ nchild = 2
 The three ingredients defining BBM can now be packed in a [`ConstantRateBranchingProblem`](@ref):
 
 ```@example bbm
-import BranchingProcesses as BP
-bbm = BP.ConstantRateBranchingProblem(bm, λ, nchild)
+bbm = ConstantRateBranchingProblem(bm, λ, nchild)
 ```
 
 [`BranchingProcesses`](@ref) does not yet support branching with non-constant, that is, time and/or state-dependent branching rates.
@@ -70,7 +69,7 @@ The output of [`solve`](@ref) is a [`BranchingProcessSolution`](@ref), a tree st
 A [plot recipe](https://docs.juliaplots.org/latest/recipes/) is included in the [`BranchingProcesses`](@ref) package to plot the sampled trajectory using the standard `plot` command, which accepts the usual [attributes](https://docs.juliaplots.org/latest/generated/attributes_series/) for a series of type "path":
 
 ```@example bbm
-using Plots
+#using Plots
 plot(sol; linewidth=2)
 ```
 
@@ -93,7 +92,7 @@ plot(sol.tree.children[1].children[1]; linewidth=2, branchpoints=true)
 In the setup above, each particle gives rise to two offspring particles at the end of its lifetime, resulting in an exponential increase in the number of particles over time. Non-deterministic offspring distributions are also supported. For instance, in a [cell division](https://en.wikipedia.org/wiki/Cell_cycle) model, we can assume that cells divide (2 offspring), enter or remain is a [quiescent, non-dividing state](https://en.wikipedia.org/wiki/G0_phase) (1 offspring, itself), or die (0 offpsring), each with some probability. In such a scenario, we define the number of children `nchild` as a [univariate discrete distribution](https://juliastats.org/Distributions.jl/stable/univariate/#Discrete-Distributions):
 
 ```@example bbm
-using Distributions
+#using Distributions
 nchild2 = DiscreteNonParametric([0, 1, 2], [0.2, 0.5, 0.3])
 ```
 
@@ -101,7 +100,7 @@ The branching process problem is constructed, solved, and plotted as before:
 
 ```@example bbm
 Random.seed!(15) # hide
-bbm2 = BP.ConstantRateBranchingProblem(bm, λ, nchild2)
+bbm2 = ConstantRateBranchingProblem(bm, λ, nchild2)
 sol2 = solve(bbm2, EM(); dt=0.01);
 plot(sol2; linewidth=2, branchpoints=true)
 ```
