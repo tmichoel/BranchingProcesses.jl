@@ -12,6 +12,7 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
+AbstractTrees = "0.4"
 DataInterpolationsND = "0.1.0"
 DocStringExtensions = "0.9"
 RecipesBase = "1"
