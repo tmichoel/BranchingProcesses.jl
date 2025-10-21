@@ -13,7 +13,6 @@ module BranchingProcesses
 
 # dependencies
 using AbstractTrees
-using DataInterpolationsND
 using Distributions
 using DocStringExtensions
 using RecipesBase
