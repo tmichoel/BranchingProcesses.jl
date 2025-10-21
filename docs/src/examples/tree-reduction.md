@@ -27,7 +27,6 @@ jprob = JumpProblem(jinput)
 and then the branching process,
 
 ```@example tr
-
 λ = 1.0         # branching rate
 nchild = 2      # deterministic number of offspring
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);

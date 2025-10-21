@@ -34,15 +34,15 @@ makedocs(
         "Solvers" => "solvers.md",
         "Types" => "types.md",
         "Utilities" => "utils.md",
-        # "Examples" => [
-        #     "Branching Brownian motion" => "examples/branching-brownian-motion.md",
-        #     "Branching Ornstein-Uhlenbeck process" => "examples/branching-oup.md",
-        #     "Branching birth-death process" => "examples/branching-birth-death.md",
-        #     "AbstractTrees interface" => "examples/abstracttrees-interface.md",
-        #     "Multi-variable branching processes" => "examples/multi-variable-processes.md",
-        #     "Ensemble simulations" => "examples/ensemble-simulation.md",
-        #     #"Tree reduction" => "examples/tree-reduction.md"
-        #     ]    
+        "Examples" => [
+            "Branching Brownian motion" => "examples/branching-brownian-motion.md",
+            "Branching Ornstein-Uhlenbeck process" => "examples/branching-oup.md",
+            "Branching birth-death process" => "examples/branching-birth-death.md",
+            "AbstractTrees interface" => "examples/abstracttrees-interface.md",
+            "Multi-variable branching processes" => "examples/multi-variable-processes.md",
+            "Ensemble simulations" => "examples/ensemble-simulation.md",
+            "Tree reduction" => "examples/tree-reduction.md"
+            ]    
         ]
 )
 
