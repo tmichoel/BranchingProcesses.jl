@@ -152,7 +152,7 @@ have been combined using a reduction function.
 $(FIELDS)
 
 """
-struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType} <: SciMLBase.AbstractTimeseriesSolution{T,N,uType}
+struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A} <: SciMLBase.AbstractTimeseriesSolution{T,N,uType}
     """The reduced values at each time point."""
     u::uType
     """The time points."""
@@ -162,7 +162,7 @@ struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType} <: SciMLBase.A
     """Algorithm information (optional)."""
     alg::A
     """Interpolation object """
-    interp::IType
+    #interp::IType
     """Whether dense output is available."""
     dense::Bool
     """Time series location"""
@@ -182,10 +182,10 @@ function ReducedTreeSolution(u, t; prob=nothing, alg=nothing, dense=false,
     A = typeof(alg)
     
     # Create simple linear interpolation
-    interp = LinearInterpolation(u, t)
-    IType = typeof(interp)
+    # interp = LinearInterpolation(u, t)
+    # IType = typeof(interp)
     
-    return ReducedTreeSolution{T,N,uType,tType,P,A,IType}(
+    return ReducedTreeSolution{T,N,uType,tType,P,A}(
         u, t, prob, alg, interp, dense, 0, retcode
     )
 end
