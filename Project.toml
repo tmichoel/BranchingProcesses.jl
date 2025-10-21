@@ -1,7 +1,7 @@
 name = "BranchingProcesses"
 uuid = "04adb457-7d2c-431a-93f1-03b44ce12db8"
-version = "0.1.0-DEV"
 authors = ["Tom Michoel"]
+version = "0.1.0-DEV"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -13,6 +13,7 @@ SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
 DataInterpolationsND = "0.1.0"
+Distributions = "0.25"
 julia = "1.6"
 
 [extras]
