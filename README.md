@@ -30,12 +30,14 @@ Studying this phenomenon requires the analysis of fluctuations across multiple i
 
 The aim is to support any process that can be implemented as a [stochastic differential equation](https://docs.sciml.ai/DiffEqDocs/stable/tutorials/sde_example/), [jump process](https://docs.sciml.ai/JumpProcesses/stable/), or [jump diffusion equation](https://docs.sciml.ai/JumpProcesses/stable/tutorials/jump_diffusion/). 
 
-Specific processes that will be implemented in the package are:
+Specific branching process constructors will be implemented for the following stochastic processes:
 
 - [Brownian motion](https://en.wikipedia.org/wiki/Brownian_motion)
 - [Ornstein-Uhlenbeck process](https://en.wikipedia.org/wiki/Ornstein%E2%80%93Uhlenbeck_process)
 - [Birth-death process](https://en.wikipedia.org/wiki/Birth%E2%80%93death_process)
 - The stochastic gene expression models of [Gorin *et al* (2022)](https://www.nature.com/articles/s41467-022-34857-7)
+
+For now, see the examples in the [documentation](https://tmichoel.github.io/BranchingProcesses.jl/) for how to construct branching processes.
 
 ## Supported rate function
 
