@@ -26,9 +26,9 @@ include("plot_recipes.jl")
 include("utils.jl")
 
 # exported names
-export ConstantRateBranchingProblem, BranchingProcessSolution #, ReducedBranchingProcessSolution
-export solve
-export tip_values, get_timespan #, reduce_tree
+export ConstantRateBranchingProblem, BranchingProcessSolution, BranchingProcessNode, ReducedBranchingProcessSolution
+export solve, solve_and_split_constantrate, sample_lifetime_constantrate, sample_offspring,remake_initial_condition
+export tip_values, get_timespan, reduce_tree
 
 
 end
