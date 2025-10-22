@@ -37,10 +37,10 @@ function reduce_tree(sol::BranchingProcessSolution; transform=identity, reductio
     end
     
     # Convert to vector of vectors for SciML compatibility
-    u = [u_matrix[i, :] for i in axes(u_matrix, 1)]
+    #u = [u_matrix[i, :] for i in axes(u_matrix, 1)]
     t = collect(trange)
     
-    return ReducedTreeSolution(u, t; prob=sol.prob)
+    return ReducedBranchingProcessSolution(u_matrix, t; prob=sol.prob)
 end
 
 

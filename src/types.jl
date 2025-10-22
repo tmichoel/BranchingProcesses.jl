@@ -171,8 +171,8 @@ struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A} <: SciMLBase.Abstrac
     retcode::SciMLBase.ReturnCode.T
 end
 
-# Constructor for ReducedTreeSolution
-function ReducedTreeSolution(u, t; prob=nothing, alg=nothing, dense=false, 
+# Constructor for ReducedBranchingProcessSolution
+function ReducedBranchingProcessSolution(u, t; prob=nothing, alg=nothing, dense=false, 
                            retcode=SciMLBase.ReturnCode.Success)
     T = eltype(eltype(u))
     N = ndims(u[1])
@@ -185,8 +185,8 @@ function ReducedTreeSolution(u, t; prob=nothing, alg=nothing, dense=false,
     # interp = LinearInterpolation(u, t)
     # IType = typeof(interp)
     
-    return ReducedTreeSolution{T,N,uType,tType,P,A}(
-        u, t, prob, alg, interp, dense, 0, retcode
+    return ReducedBranchingProcessSolution{T,N,uType,tType,P,A}(
+        u, t, prob, alg, dense, 0, retcode
     )
 end
 
