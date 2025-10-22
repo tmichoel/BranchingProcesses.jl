@@ -48,14 +48,14 @@ plot(sol; linewidth=2, branchpoints=true)
 By default, [`reduce_tree`](@ref) sums the values of all cells alive at a given time, starting from the initial time of the root cell and stopping at the final time of the last living cell, with a time step of `dt`:
 
 ```@example tr
-sol_red = reduce_tree(sol; dt=0.01)
+sol_red = reduce_tree(sol; dt=0.01);
 plot(sol_red.t, sol_red.u, label=L"\sum_{i=1}^{N(t)} X_i(t)")
 ```
 
 It is possible to replace the default summing of values to taking a product, although use cases for this in practice may be rather limited:
 
 ```@example tr
-reduce_tree(sol; dt=0.01, reduction="prod")
+reduce_tree(sol; dt=0.01, reduction="prod");
 ```
 
 ## Applying transformations
@@ -63,14 +63,14 @@ reduce_tree(sol; dt=0.01, reduction="prod")
 We can apply a transformation to the values of the process before summing. For instance, to sum the squared values:
 
 ```@example tr
-sol_red = reduce_tree(sol; dt=0.01, transform=(x -> x.^2))
+sol_red = reduce_tree(sol; dt=0.01, transform=(x -> x.^2));
 plot(sol_red.t, sol_red.u, label=L"\sum_{i=1}^{N(t)} X_i(t)^2")
 ```
 
 or to count the number of cells alive at any given time:
 
 ```@example tr
-sol_red = reduce_tree(sol; dt=0.01, transform=(x -> 1))
+sol_red = reduce_tree(sol; dt=0.01, transform=(x -> 1));
 plot(sol_red.t, sol_red.u, label=L"N(t)")
 ```
 
@@ -93,14 +93,14 @@ jprob = JumpProblem(jinput)
 nchild = 2
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
 Random.seed!(123) # hide
-tree = solve(bjprob,  SSAStepper());
+sol = solve(bjprob,  SSAStepper());
 ```
 
 Obtain a reduced time series for the sum of all variables:
 
 ```@example tr
 var_names = string.(unknowns(mm_system))
-sol_red = reduce_tree(sol; dt=0.1)
+sol_red = reduce_tree(sol; dt=0.1);
 plot(sol_red.t, sol_red.u,  label=permutedims(var_names))
 ```
 
@@ -108,21 +108,21 @@ To summarize only one or a subset of variables, we can either use an `idxs` keyw
 
 ```@example tr
 subs = [1,4]
-sol_red = reduce_tree(sol; dt=0.1, idxs=subs)
+sol_red = reduce_tree(sol; dt=0.1, idxs=subs);
 plot(sol_red.t, sol_red.u,  label=permutedims(var_names[subs]))
 ```
 
 or use a transformation:
 
 ```@example tr
-sol_red = reduce_tree(sol; dt=0.1, transform=(x -> x[subs]))
-plot(sol_red.t, sol_red.u,  label=permutedims(var_names[subs]))
+sol_red = reduce_tree(sol; dt=0.1, transform=(x -> x[subs]));
+plot(sol_red.t, sol_red.u,  label=permutedims(var_names[subs]));
 ```
 
 Transformations can also be used to create summaries of summaries, for instance, for the total number of molecules:
 
 ```@example tr
-sol_red = reduce_tree(sol; dt=0.1, transform=(x -> sum(x)))
+sol_red = reduce_tree(sol; dt=0.1, transform=(x -> sum(x)));
 plot(sol_red.t, sol_red.u,  label="Total molecule count")
 ```
 
