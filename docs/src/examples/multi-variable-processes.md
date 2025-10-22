@@ -8,7 +8,7 @@ The single-particle or single-cell stochastic process undergoing branching can b
 
 
 ```@example mm
-# using Catalyst
+using Catalyst
 mm_system = @reaction_network begin
     kB, S + E --> SE
     kD, SE --> S + E
@@ -19,7 +19,7 @@ end
 We set up a single-cell process (with four variables, ``S``. ``E``. ``SE``. and ``P``) as in the [model library](https://docs.sciml.ai/Catalyst/stable/model_creation/examples/basic_CRN_library/#basic_CRN_library_mm):
 
 ```@example mm
-# using DifferentialEquations, JumpProcesses
+using DifferentialEquations, JumpProcesses
 u0 = [:S => 30, :E => 10, :SE => 0, :P => 0]
 tspan = (0., 100.)
 ps = [:kB => 0.00166, :kD => 0.0001, :kP => 0.1]
@@ -31,7 +31,7 @@ jprob = JumpProblem(jinput)
 A trajectory for a single cell can be sampled and plotted:
 
 ```@example mm
-# using Plots
+using Plots
 jsol = solve(jprob, SSAStepper())
 plot(jsol)
 ```
@@ -39,7 +39,7 @@ plot(jsol)
 A branching jump problem is set up as usual:
 
 ```@example mm
-
+using BranchingProcesses
 λ = 0.05         # branching rate
 nchild = 2      # deterministic number of offspring
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
@@ -48,9 +48,9 @@ bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
 To sample a tranjectory of the branching process, we call the [`solve`](@ref) function as usual:
 
 ```@example mm
-# using Random # hide
+using Random # hide
 Random.seed!(123) # hide
-# using AbstractTrees
+using AbstractTrees
 tree = solve(bjprob,  SSAStepper());
 treeheight(tree)
 ```

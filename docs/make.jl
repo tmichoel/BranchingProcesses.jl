@@ -27,8 +27,9 @@ makedocs(
         edit_link="main",
         assets=String[],
         example_size_threshold=0,
-        size_threshold=nothing,
+        size_threshold=nothing
     ),
+    workdir = joinpath(@__DIR__, ".."),
     pages=[
         "Introduction" => "index.md",
         "Solvers" => "solvers.md",

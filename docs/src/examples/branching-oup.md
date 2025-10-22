@@ -24,7 +24,7 @@ If ``X_t`` represents the [expression level of a gene](https://en.wikipedia.org/
 Similar to the [branching Brownian motion tutorial](./branching-brownian-motion.md), we cannot (yet) use the distributionally exact [OUP implementation](https://docs.sciml.ai/DiffEqNoiseProcess/stable/noise_processes/#DiffEqNoiseProcess.OrnsteinUhlenbeckProcess) from the [DiffEqNoiseProcess](https://docs.sciml.ai/DiffEqNoiseProcess/stable/) package, but must define the OUP as a [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/):
 
 ```@example oup
-# using DifferentialEquations
+using DifferentialEquations
 f(u,p,t) = p[2]*(p[1]-u)
 g(u,p,t) = p[3]
 u0 = 0.0
@@ -38,7 +38,7 @@ oup = SDEProblem(f,g, u0, tspan, (μ, α, σ))
 We can first verify that after an initial "burn-in" period, the OUP indeed fluctuates around its steady-state value ``\mu``:
 
 ```@example oup
-# using Plots
+using Plots
 sol = solve(oup, EM(), dt=0.01)
 plot(sol; linewidth=2, legend=false)
 ```
@@ -46,6 +46,7 @@ plot(sol; linewidth=2, legend=false)
 We can now set up the branching OUP problem in the same way as in the [branching Brownian motion tutorial](./branching-brownian-motion.md):
 
 ```@example oup
+using BranchingProcesses
 λ = 1.0         # branching rate
 nchild = 2      # deterministic number of offspring
 boup = ConstantRateBranchingProblem(oup, λ, nchild)
@@ -56,7 +57,7 @@ boup = ConstantRateBranchingProblem(oup, λ, nchild)
 To sample a tranjectory of the branching process, we call the [`solve`](@ref) function, resulting in a [`BranchingProcessSolution`](@ref) tree, that can be visualized using the standard plot function:
 
 ```@example oup
-# using Random
+using Random
 Random.seed!(123)
 sol = solve(boup, EM(); dt=0.01);
 plot(sol; linewidth=2, branchpoints=true)

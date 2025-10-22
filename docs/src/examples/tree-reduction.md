@@ -11,13 +11,13 @@ In experiments it is often the case that a single measurement (per variable) is 
 Start by creating a [branching birth-death process](./branching-birth-death.md). First define the single-cell process,
 
 ```@example tr
-# using Catalyst
+using Catalyst
 rn = @reaction_network begin
     kp, 0 --> X
     kd, X --> 0
 end
 
-# using DifferentialEquations, JumpProcesses
+using DifferentialEquations, JumpProcesses
 u0 = [200]
 tspan = (0.0, 3.0)
 p = [:kp => 50.0, :kd => 0.25]
@@ -27,6 +27,7 @@ jprob = JumpProblem(jinput)
 and then the branching process,
 
 ```@example tr
+using BranchingProcesses
 λ = 1.0         # branching rate
 nchild = 2      # deterministic number of offspring
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
@@ -35,9 +36,9 @@ bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
 Sample and plot a tree:
 
 ```@example tr
-# using Random # hide
+using Random # hide
 Random.seed!(123) # hide
-# using Plots, LaTeXStrings
+using Plots, LaTeXStrings
 sol = solve(bjprob,  SSAStepper());
 plot(sol; linewidth=2, branchpoints=true)
 ```
@@ -48,13 +49,13 @@ By default, [`reduce_tree`](@ref) sums the values of all cells alive at a given 
 
 ```@example tr
 sol_red = reduce_tree(sol; dt=0.01)
-plot(t, u, label=L"\sum_{i=1}^{N(t)} X_i(t)")
+plot(sol_red.t, sol_red.u, label=L"\sum_{i=1}^{N(t)} X_i(t)")
 ```
 
 It is possible to replace the default summing of values to taking a product, although use cases for this in practice may be rather limited:
 
 ```@example tr
-t,u = reduce_tree(tree; dt=0.01, reduction="prod")
+reduce_tree(sol; dt=0.01, reduction="prod")
 ```
 
 ## Applying transformations
@@ -62,15 +63,15 @@ t,u = reduce_tree(tree; dt=0.01, reduction="prod")
 We can apply a transformation to the values of the process before summing. For instance, to sum the squared values:
 
 ```@example tr
-t,u2 = reduce_tree(tree; dt=0.01, transform=(x -> x.^2))
-plot(t, u2, label=L"\sum_{i=1}^{N(t)} X_i(t)^2")
+sol_red = reduce_tree(sol; dt=0.01, transform=(x -> x.^2))
+plot(sol_red.t, sol_red.u, label=L"\sum_{i=1}^{N(t)} X_i(t)^2")
 ```
 
 or to count the number of cells alive at any given time:
 
 ```@example tr
-t,u1 = reduce_tree(tree; dt=0.01, transform=(x -> 1))
-plot(t, u1, label=L"N(t)")
+sol_red = reduce_tree(sol; dt=0.01, transform=(x -> 1))
+plot(sol_red.t, sol_red.u, label=L"N(t)")
 ```
 
 ## Reducing and transforming multivariable processes
@@ -99,37 +100,37 @@ Obtain a reduced time series for the sum of all variables:
 
 ```@example tr
 var_names = string.(unknowns(mm_system))
-t,u = reduce_tree(tree; dt=0.1)
-plot(t, u,  label=permutedims(var_names))
+sol_red = reduce_tree(sol; dt=0.1)
+plot(sol_red.t, sol_red.u,  label=permutedims(var_names))
 ```
 
 To summarize only one or a subset of variables, we can either use an `idxs` keyword argument:
 
 ```@example tr
 subs = [1,4]
-t,u = reduce_tree(tree; dt=0.1, idxs=subs)
-plot(t, u,  label=permutedims(var_names[subs]))
+sol_red = reduce_tree(sol; dt=0.1, idxs=subs)
+plot(sol_red.t, sol_red.u,  label=permutedims(var_names[subs]))
 ```
 
 or use a transformation:
 
 ```@example tr
-t,u = reduce_tree(tree; dt=0.1, transform=(x -> x[subs]))
-plot(t, u,  label=permutedims(var_names[subs]))
+sol_red = reduce_tree(sol; dt=0.1, transform=(x -> x[subs]))
+plot(sol_red.t, sol_red.u,  label=permutedims(var_names[subs]))
 ```
 
 Transformations can also be used to create summaries of summaries, for instance, for the total number of molecules:
 
 ```@example tr
-t,u = reduce_tree(tree; dt=0.1, transform=(x -> sum(x)))
-plot(t, u,  label="Total molecule count")
+sol_red = reduce_tree(sol; dt=0.1, transform=(x -> sum(x)))
+plot(sol_red.t, sol_red.u,  label="Total molecule count")
 ```
 
 ## Tree reduction and ensemble simulations
 
 Tree reduction is particularly useful in the context of [ensemble simulations](./ensemble-simulation.md).
 
-```@example tr
+```example tr
 ensemble_bjprob = EnsembleProblem(bjprob)
 ensemble_tree = solve(ensemble_bjprob, SSAStepper(), EnsembleThreads(), trajectories=100)
 ```

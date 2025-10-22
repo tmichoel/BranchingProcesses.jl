@@ -14,7 +14,7 @@ Let's model the actual [Luria-Delbrück experiment](https://en.wikipedia.org/wik
 
 
 ```@example ensemble
-# using DifferentialEquations, JumpProcesses, Catalyst
+using DifferentialEquations, JumpProcesses, Catalyst
 rn = @reaction_network begin
     μ, W --> M
 end
@@ -28,6 +28,7 @@ jprob = JumpProblem(rn, dprob, Direct())
 Define a branching process problem:
 
 ```@example ensemble
+using BranchingProcesses
 λ = 1.0
 nchild = 2
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
@@ -54,7 +55,7 @@ mutant_cell_counts = [x[2] for x in cell_counts];
 ```
 
 ```@example ensemble
-# using Plots
+using Plots
 histogram(total_cell_counts,label="",xlabel="Total cell counts", ylabel="Number of clones")
 ```
 
