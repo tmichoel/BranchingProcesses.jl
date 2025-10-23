@@ -50,6 +50,7 @@ jobs:
           version: '1'
       - uses: julia-actions/cache@v2
       - name: Configure doc environment
+        working-directory: docs
         run: |
           julia --project=docs -e '
             using Pkg
@@ -57,7 +58,8 @@ jobs:
             Pkg.instantiate()'
       - uses: julia-actions/julia-buildpkg@v1
       - name: Build and deploy docs
-        run: julia --project=docs docs/make.jl
+        working-directory: docs
+        run: julia --project=. docs/make.jl
       #- uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
