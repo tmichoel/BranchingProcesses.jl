@@ -152,7 +152,7 @@ have been combined using a reduction function.
 $(FIELDS)
 
 """
-struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A} <: SciMLBase.AbstractTimeseriesSolution{T,N,uType}
+struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType} <: SciMLBase.AbstractTimeseriesSolution{T,N,uType}
     """The reduced values at each time point."""
     u::uType
     """The time points."""
@@ -161,34 +161,77 @@ struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A} <: SciMLBase.Abstrac
     prob::P
     """Algorithm information (optional)."""
     alg::A
-    """Interpolation object """
-    #interp::IType
     """Whether dense output is available."""
     dense::Bool
-    """Time series location"""
+    """Interpolation object."""
+    interp::IType
+    """Time series location."""
     tslocation::Int
-    """Return code"""
+    """Return code."""
     retcode::SciMLBase.ReturnCode.T
+    """Transformation function applied to particle values before reduction."""
+    transform::TransType
+    """Reduction method used to combine particle values ("sum", "prod", or custom function)."""
+    reduction::RedType
+    """Original BranchingProcessSolution that was reduced (optional)."""
+    original_solution::OrigType
 end
 
-# Constructor for ReducedBranchingProcessSolution
-function ReducedBranchingProcessSolution(u, t; prob=nothing, alg=nothing, dense=false, 
-                           retcode=SciMLBase.ReturnCode.Success)
-    T = eltype(eltype(u))
-    N = ndims(u[1])
+# Main constructor
+function ReducedBranchingProcessSolution(u, t; 
+                                       prob=nothing, 
+                                       alg=nothing, 
+                                       dense=false, 
+                                       interp=nothing, 
+                                       tslocation=0, 
+                                       retcode=SciMLBase.ReturnCode.Success,
+                                       transform=identity,
+                                       reduction="sum",
+                                       original_solution=nothing)
+    T = eltype(u[1])
+    N = 1
     uType = typeof(u)
     tType = typeof(t)
     P = typeof(prob)
     A = typeof(alg)
-    
-    # Create simple linear interpolation
-    # interp = LinearInterpolation(u, t)
-    # IType = typeof(interp)
-    
-    return ReducedBranchingProcessSolution{T,N,uType,tType,P,A}(
-        u, t, prob, alg, dense, 0, retcode
+    IType = typeof(interp)
+    TransType = typeof(transform)
+    RedType = typeof(reduction)
+    OrigType = typeof(original_solution)
+
+    return ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType}(
+        u, t, prob, alg, dense, interp, tslocation, retcode, transform, reduction, original_solution
     )
 end
+
+# Convenience accessors
+"""
+    get_transform(sol::ReducedBranchingProcessSolution)
+
+Get the transformation function used in the reduction.
+"""
+get_transform(sol::ReducedBranchingProcessSolution) = sol.transform
+
+"""
+    get_reduction_method(sol::ReducedBranchingProcessSolution)
+
+Get the reduction method used to combine particle values.
+"""
+get_reduction_method(sol::ReducedBranchingProcessSolution) = sol.reduction
+
+"""
+    get_original_solution(sol::ReducedBranchingProcessSolution)
+
+Get the original BranchingProcessSolution that was reduced (if available).
+"""
+get_original_solution(sol::ReducedBranchingProcessSolution) = sol.original_solution
+
+"""
+    has_original_solution(sol::ReducedBranchingProcessSolution)
+
+Check if the original BranchingProcessSolution is stored.
+"""
+has_original_solution(sol::ReducedBranchingProcessSolution) = sol.original_solution !== nothing
 
 # Required SciMLBase interface methods
 #SciMLBase.has_analytic(::ReducedTreeSolution) = false
