@@ -49,7 +49,12 @@ By default, [`reduce_tree`](@ref) sums the values of all cells alive at a given 
 
 ```@example tr
 sol_red = reduce_tree(sol; dt=0.01);
-plot(sol_red.t, sol_red.u, label=L"\sum_{i=1}^{N(t)} X_i(t)")
+```
+
+The reduced time series has the type [`ReducedBranchingProcessSolution`](@ref) and a plot recipe is available for this type:
+
+```@example tr
+plot(sol_red)
 ```
 
 It is possible to replace the default summing of values to taking a product, although use cases for this in practice may be rather limited:
@@ -64,14 +69,14 @@ We can apply a transformation to the values of the process before summing. For i
 
 ```@example tr
 sol_red = reduce_tree(sol; dt=0.01, transform=(x -> x.^2));
-plot(sol_red.t, sol_red.u, label=L"\sum_{i=1}^{N(t)} X_i(t)^2")
+plot(sol_red)
 ```
 
 or to count the number of cells alive at any given time:
 
 ```@example tr
 sol_red = reduce_tree(sol; dt=0.01, transform=(x -> 1));
-plot(sol_red.t, sol_red.u, label=L"N(t)")
+plot(sol_red)
 ```
 
 ## Reducing and transforming multivariable processes
@@ -101,7 +106,7 @@ Obtain a reduced time series for the sum of all variables:
 ```@example tr
 var_names = string.(unknowns(mm_system))
 sol_red = reduce_tree(sol; dt=0.1);
-plot(sol_red.t, sol_red.u,  label=permutedims(var_names))
+plot(sol_red)
 ```
 
 To summarize only one or a subset of variables, we can either use an `idxs` keyword argument:
@@ -109,21 +114,21 @@ To summarize only one or a subset of variables, we can either use an `idxs` keyw
 ```@example tr
 subs = [1,4]
 sol_red = reduce_tree(sol; dt=0.1, idxs=subs);
-plot(sol_red.t, sol_red.u,  label=permutedims(var_names[subs]))
+plot(sol_red)
 ```
 
 or use a transformation:
 
 ```@example tr
 sol_red = reduce_tree(sol; dt=0.1, transform=(x -> x[subs]));
-plot(sol_red.t, sol_red.u,  label=permutedims(var_names[subs]));
+plot(sol_red);
 ```
 
 Transformations can also be used to create summaries of summaries, for instance, for the total number of molecules:
 
 ```@example tr
 sol_red = reduce_tree(sol; dt=0.1, transform=(x -> sum(x)));
-plot(sol_red.t, sol_red.u,  label="Total molecule count")
+plot(sol_red)
 ```
 
 ## Tree reduction and ensemble simulations
