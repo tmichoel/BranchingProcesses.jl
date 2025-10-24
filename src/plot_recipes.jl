@@ -16,7 +16,7 @@ end
     for node in nodes
         @series begin
             seriestype := :path
-            linewidth --> 2
+            #linewidth --> 2
             idxs --> idxs  # Use idxs instead of vars
             node.sol
         end 
