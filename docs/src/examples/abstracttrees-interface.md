@@ -65,4 +65,5 @@ An even shorter short-cut is to call the function [`tip_values`](@ref):
 
 ```@example bbm
 tip_vals = tip_values(sol)
+nothing # hide
 ```

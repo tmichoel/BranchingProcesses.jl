@@ -32,6 +32,7 @@ using BranchingProcesses
 λ = 1.0
 nchild = 2
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
+nothing # hide
 ```
 
 To simulate a fluctuation experiment with 100 clones, first set up an [EnsembleProblem](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/#Building-a-Problem):
@@ -52,6 +53,7 @@ We can obtain the number of cells and the number of mutants in each clone using 
 cell_counts = [sum(tip_values(sol)) for sol in ensemble_sol];
 total_cell_counts = [sum(x) for x in cell_counts];
 mutant_cell_counts = [x[2] for x in cell_counts];
+nothing # hide
 ```
 
 ```@example ensemble

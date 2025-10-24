@@ -43,6 +43,7 @@ using BranchingProcesses
 λ = 0.05         # branching rate
 nchild = 2      # deterministic number of offspring
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
+nothing # hide
 ```
 
 To sample a tranjectory of the branching process, we call the [`solve`](@ref) function as usual:

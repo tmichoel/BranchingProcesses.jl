@@ -48,6 +48,7 @@ using BranchingProcesses
 λ = 1.0         # branching rate
 nchild = 2      # deterministic number of offspring
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
+nothing # hide
 ```
 
 ## Sampling a trajectory
