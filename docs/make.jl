@@ -1,6 +1,7 @@
-using Pkg
-Pkg.develop(PackageSpec(path=".."))
-Pkg.instantiate()
+# using Pkg
+# Pkg.develop(PackageSpec(path=".."))
+# Pkg.instantiate()
+push!(LOAD_PATH,"../src/")
 
 using Documenter
 using BranchingProcesses
