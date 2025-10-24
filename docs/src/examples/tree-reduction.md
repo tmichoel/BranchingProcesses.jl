@@ -31,6 +31,7 @@ using BranchingProcesses
 λ = 1.0         # branching rate
 nchild = 2      # deterministic number of offspring
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
+nothing # hide
 ```
 
 Sample and plot a tree:
@@ -49,6 +50,7 @@ By default, [`reduce_tree`](@ref) sums the values of all cells alive at a given 
 
 ```@example tr
 sol_red = reduce_tree(sol; dt=0.01);
+nothing # hide
 ```
 
 The reduced time series has the type [`ReducedBranchingProcessSolution`](@ref) and a plot recipe is available for this type:
@@ -61,6 +63,7 @@ It is possible to replace the default summing of values to taking a product, alt
 
 ```@example tr
 reduce_tree(sol; dt=0.01, reduction="prod");
+nothing # hide
 ```
 
 ## Applying transformations
@@ -99,6 +102,7 @@ nchild = 2
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);
 Random.seed!(123) # hide
 sol = solve(bjprob,  SSAStepper());
+nothing # hide
 ```
 
 Obtain a reduced time series for the sum of all variables:
