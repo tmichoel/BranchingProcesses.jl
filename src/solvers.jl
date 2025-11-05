@@ -21,11 +21,11 @@ The timespan of the problem `prob` defines the total time interval for the branc
 
 Returns a [`BranchingProcessNode`](@ref) representing the tree structure.
 
-See also: [SDE problems](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/), [`sample_lifetime_constantrate`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
+See also: [SDE problems](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/), [`sample_lifetime`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
 function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=nothing; kwargs...) where {P<:SciMLBase.AbstractDEProblem, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
     # sample the lifetime of the current particle
-    τ = sample_lifetime_constantrate(branchrate)
+    τ = sample_lifetime(branchrate)
 
     # get the timespan of the problem
     tspan = get_timespan(prob)
@@ -89,13 +89,13 @@ function get_timespan(prob::P) where P<:SciMLBase.AbstractDEProblem
 end
 
 """
-    sample_lifetime_constantrate(λ::T) where T <: Real
+    sample_lifetime(λ::T) where T <: Real
 
 Sample the lifetime of a particle when the branching rate is a constant `λ` independent of time or the value of the process. This is equivalent to sampling from an exponential distribution with rate `λ`.
 
 Note that this is not the same as a [ConstantRateJump](https://docs.sciml.ai/JumpProcesses/stable/api/#JumpProcesses.ConstantRateJump) where the rate is only constant *between* jumps.
 """
-function sample_lifetime_constantrate(λ::T) where T <: Real
+function sample_lifetime(λ::T) where T <: Real
     return rand(Exponential(1/λ))
 end
 
