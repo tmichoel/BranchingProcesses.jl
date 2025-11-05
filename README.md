@@ -6,7 +6,7 @@
 
 [BranchingProcesses](https://github.com/tmichoel/BranchingProcesses.jl) is a Julia package for modelling branching stochastic processes, also known as branching particle systems. 
 
-Branching stochastic processes are processes where "particles" (which could represent cells, individuals, or species depending on the context) have one or more degrees of freedom $X(t)$ whose dynamics is described by a stationary Markov process. After a certain lifetime, a particle splits into $k\geq 0$ identical, independent offspring particles with probability $p_k$. This process is repeated indefinitely, producing a collection of $N(t)$ particles at time $t$. Splitting happens with a rate function $\gamma(x,\tau)$ that may depend on the current state $x$ and age $\tau$ of the particle.
+Branching stochastic processes are processes where "particles" (which could represent cells, individuals, or species depending on the context) have one or more degrees of freedom $X(t)$ whose dynamics is described by a stationary Markov process. After a certain lifetime, a particle splits into $k\geq 0$ identical, independent offspring particles with probability $p_k$. This process is repeated indefinitely, producing a collection of $N(t)$ particles at time $t$. Splitting happens with a rate function $\gamma(t)$ that may depend on the age $t$ of the particle.
 
 Examples of such processes are:
 
@@ -39,9 +39,10 @@ Specific branching process constructors will be implemented for the following st
 
 For now, see the examples in the [documentation](https://tmichoel.github.io/BranchingProcesses.jl/) for how to construct branching processes.
 
-## Supported rate function
+## Supported lifetime distributions
 
-Any valid [constant](https://docs.sciml.ai/JumpProcesses/stable/api/#JumpProcesses.ConstantRateJump) or [variable](https://docs.sciml.ai/JumpProcesses/stable/api/#JumpProcesses.VariableRateJump) rate function. The default is a constant rate function with parameter 1, that is, the probability for a particle to be alive with lifetime $\tau$ is $\exp(-\tau)$.
+A branching rate function $\gamma(t)$ defines a lifetime distribution $w(t)=\exp(-\int_0^t ds\gamma(s))$, and vice versa, where $w(t)$ is the probability of a particle to reach age $t$ without splitting. The package uses the lifetime distribution representation and supports any [univariate distribution](https://juliastats.org/Distributions.jl/stable/univariate/) with positive support.
+
 
 ## Supported splitting distributions
 
