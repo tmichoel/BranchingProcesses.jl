@@ -8,24 +8,24 @@ Returns a [`BranchingProcessSolution`](@ref) containing the problem definition a
 See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_split`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
 function SciMLBase.solve(bp::T, alg::A=nothing; kwargs...) where {T<:ConstantRateBranchingProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
-    tree = solve_and_split(bp.prob, bp.branchrate, bp.nchild, alg; kwargs...)
+    tree = solve_and_split(bp.prob, bp.lifetime, bp.nchild, alg; kwargs...)
     return BranchingProcessSolution(bp, tree; alg=alg, retcode=SciMLBase.ReturnCode.Success)
 end
 
 """
-    solve_and_split(prob::T, λ::S, nchild::O, alg::A; kwargs...) where {T<:SciMLBase.AbstractDEProblem, S<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
+    solve_and_split(prob::T, lifetime::L, nchild::O, alg::A; kwargs...) where {T<:SciMLBase.AbstractDEProblem, L<:UnivariateDistribution, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
 
-Recursively solve a branching stochastic process where the single-particle dynamics is defined by the SDE problem `prob`, the branching rate is a constant `λ`, and the number of children `nchild` of each particle is either a non-negative integer or a discrete distribution from which the number of children is sampled. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample the trajectory of each particle.
+Recursively solve a branching stochastic process where the single-particle dynamics is defined by the SDE problem `prob`, the lifetime distribution is `lifetime`, and the number of children `nchild` of each particle is either a non-negative integer or a discrete distribution from which the number of children is sampled. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample the trajectory of each particle.
 
-The timespan of the problem `prob` defines the total time interval for the branching process. A lifetime for the first particle is sampled from an exponential distribution with rate `λ`. If the lifetime is larger than the total time interval, the problem is solved until the end of the original interval and a solution node is returned without children. If the lifetime is smaller than the total time interval, the problem is solved until the sampled lifetime, and a solution node is returned with recursively solved children for the remaining time interval.
+The timespan of the problem `prob` defines the total time interval for the branching process. A lifetime for the first particle is sampled from the provided lifetime distribution. If the lifetime is larger than the total time interval, the problem is solved until the end of the original interval and a solution node is returned without children. If the lifetime is smaller than the total time interval, the problem is solved until the sampled lifetime, and a solution node is returned with recursively solved children for the remaining time interval.
 
 Returns a [`BranchingProcessNode`](@ref) representing the tree structure.
 
 See also: [SDE problems](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/), [`sample_lifetime`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
-function solve_and_split(prob::P, branchrate::R, nchild::O, alg::A=nothing; kwargs...) where {P<:SciMLBase.AbstractDEProblem, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
+function solve_and_split(prob::P, lifetime::L, nchild::O, alg::A=nothing; kwargs...) where {P<:SciMLBase.AbstractDEProblem, L<:UnivariateDistribution, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
     # sample the lifetime of the current particle
-    τ = sample_lifetime(branchrate)
+    τ = sample_lifetime(lifetime)
 
     # get the timespan of the problem
     tspan = get_timespan(prob)
@@ -45,7 +45,7 @@ function solve_and_split(prob::P, branchrate::R, nchild::O, alg::A=nothing; kwar
         # sample the number of children
         nc = sample_offspring(nchild)
         #  return a BranchingProcessNode with the solution for the current branch and recursively solve its children
-        children = [solve_and_split(newprob, branchrate, nchild, alg; kwargs...) for _ in 1:nc]
+        children = [solve_and_split(newprob, lifetime, nchild, alg; kwargs...) for _ in 1:nc]
         return BranchingProcessNode(sol, children)
     end
 end
@@ -89,14 +89,14 @@ function get_timespan(prob::P) where P<:SciMLBase.AbstractDEProblem
 end
 
 """
-    sample_lifetime(λ::T) where T <: Real
+    sample_lifetime(lifetime::T) where T <: UnivariateDistribution
 
-Sample the lifetime of a particle when the branching rate is a constant `λ` independent of time or the value of the process. This is equivalent to sampling from an exponential distribution with rate `λ`.
+Sample the lifetime of a particle from the provided lifetime distribution. This function draws a random sample from the given distribution.
 
-Note that this is not the same as a [ConstantRateJump](https://docs.sciml.ai/JumpProcesses/stable/api/#JumpProcesses.ConstantRateJump) where the rate is only constant *between* jumps.
+For backward compatibility, when a ConstantRateBranchingProblem is constructed with a positive real number λ as the second argument, it is interpreted as a branch rate and converted to an exponential distribution with parameter 1/λ.
 """
-function sample_lifetime(λ::T) where T <: Real
-    return rand(Exponential(1/λ))
+function sample_lifetime(lifetime::T) where T <: UnivariateDistribution
+    return rand(lifetime)
 end
 
 """
