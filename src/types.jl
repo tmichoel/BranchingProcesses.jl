@@ -10,19 +10,43 @@ A structure to define a branching stochastic process with constant branching rat
 $(FIELDS)
 
 """
-struct ConstantRateBranchingProblem{P<:SciMLBase.AbstractDEProblem, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}} <: BranchingProblem
+struct ConstantRateBranchingProblem{P<:SciMLBase.AbstractDEProblem, L<:UnivariateDistribution, O<:Union{Integer,DiscreteUnivariateDistribution}} <: BranchingProblem
     """The SDE or jump process problem defining the single-particle dynamics of the branching process, an instance of [`SciMLBase.AbstractSDEProblem`](https://docs.sciml.ai/SciMLBase/stable/interfaces/Problems/#SciMLBase.AbstractSDEProblem) or [`SciMLBase.AbstractJumpProblem`](https://docs.sciml.ai/SciMLBase/stable/interfaces/Problems/#SciMLBase.AbstractJumpProblem)."""
     prob::P
-    """The branching rate of the process, which must be a positive real number."""
-    branchrate::R
+    """The lifetime distribution of the process, which must be a discrete or continuous univariate distribution with positive support."""
+    lifetime::L
     """The number of children to be created for each particle, which can be a non-negative integer or a [discrete distribution](https://juliastats.org/Distributions.jl/stable/univariate/#Discrete-Distributions) with non-negative support from which the number of children is sampled."""
     nchild::O
    
-    function ConstantRateBranchingProblem(prob::P, branchrate::R, nchild::O) where {P<:SciMLBase.AbstractDEProblem, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}}
-        # ensure that the branching rate is a positive real number
-        if !isa(branchrate, Real) || branchrate <= 0
-            throw(ArgumentError("branchrate must be a positive real number"))
+    function ConstantRateBranchingProblem(prob::P, lifetime, nchild::O) where {P<:SciMLBase.AbstractDEProblem, O<:Union{Integer,DiscreteUnivariateDistribution}}
+        # if lifetime is a Real number, interpret it as a branch rate and convert to exponential distribution
+        if isa(lifetime, Real)
+            if lifetime <= 0
+                throw(ArgumentError("lifetime (branch rate) must be a positive real number"))
+            end
+            lifetime_dist = Exponential(1/lifetime)
+            # ensure the number of children is valid
+            if isa(nchild, Integer)
+                if nchild < 0
+                    throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
+                end
+            elseif isa(nchild, DiscreteUnivariateDistribution)
+                if minimum(nchild) < 0
+                    throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
+                end
+            end
+            return new{P, typeof(lifetime_dist), O}(prob, lifetime_dist, nchild)
         end
+        
+        # ensure that the lifetime is a univariate distribution with positive support
+        if !isa(lifetime, UnivariateDistribution)
+            throw(ArgumentError("lifetime must be a positive real number or a univariate distribution with positive support"))
+        end
+        # check that the distribution has positive support by checking if it can have negative values
+        if minimum(lifetime) < 0 || insupport(lifetime, -eps())
+            throw(ArgumentError("lifetime must have positive support"))
+        end
+        
         # ensure the number of children is a positive integer or a discrete distribution with positive support
         if isa(nchild, Integer)
             if nchild < 0
@@ -33,7 +57,7 @@ struct ConstantRateBranchingProblem{P<:SciMLBase.AbstractDEProblem, R<:Real, O<:
                 throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
             end
         end
-        return new{P, R, O}(prob, branchrate, nchild)
+        return new{P, typeof(lifetime), O}(prob, lifetime, nchild)
     end
 end;
 
