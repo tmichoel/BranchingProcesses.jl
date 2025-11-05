@@ -25,14 +25,25 @@ struct ConstantRateBranchingProblem{P<:SciMLBase.AbstractDEProblem, L<:Univariat
                 throw(ArgumentError("lifetime (branch rate) must be a positive real number"))
             end
             lifetime_dist = Exponential(1/lifetime)
-            return ConstantRateBranchingProblem(prob, lifetime_dist, nchild)
+            # ensure the number of children is valid
+            if isa(nchild, Integer)
+                if nchild < 0
+                    throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
+                end
+            elseif isa(nchild, DiscreteUnivariateDistribution)
+                if minimum(nchild) < 0
+                    throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
+                end
+            end
+            return new{P, typeof(lifetime_dist), O}(prob, lifetime_dist, nchild)
         end
         
         # ensure that the lifetime is a univariate distribution with positive support
         if !isa(lifetime, UnivariateDistribution)
             throw(ArgumentError("lifetime must be a positive real number or a univariate distribution with positive support"))
         end
-        if minimum(lifetime) < 0
+        # check that the distribution has positive support by checking if it can have negative values
+        if minimum(lifetime) < 0 || insupport(lifetime, -eps())
             throw(ArgumentError("lifetime must have positive support"))
         end
         
