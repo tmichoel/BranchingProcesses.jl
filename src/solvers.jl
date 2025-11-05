@@ -5,15 +5,15 @@ Solve a branching stochastic process with constant branching rate defined by the
 
 Returns a [`BranchingProcessSolution`](@ref) containing the problem definition and the resulting tree structure.
 
-See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_split_constantrate`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
+See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_split`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
 function SciMLBase.solve(bp::T, alg::A=nothing; kwargs...) where {T<:ConstantRateBranchingProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
-    tree = solve_and_split_constantrate(bp.prob, bp.branchrate, bp.nchild, alg; kwargs...)
+    tree = solve_and_split(bp.prob, bp.branchrate, bp.nchild, alg; kwargs...)
     return BranchingProcessSolution(bp, tree; alg=alg, retcode=SciMLBase.ReturnCode.Success)
 end
 
 """
-    solve_and_split_constantrate(prob::T, λ::S, nchild::O, alg::A; kwargs...) where {T<:SciMLBase.AbstractDEProblem, S<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
+    solve_and_split(prob::T, λ::S, nchild::O, alg::A; kwargs...) where {T<:SciMLBase.AbstractDEProblem, S<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
 
 Recursively solve a branching stochastic process where the single-particle dynamics is defined by the SDE problem `prob`, the branching rate is a constant `λ`, and the number of children `nchild` of each particle is either a non-negative integer or a discrete distribution from which the number of children is sampled. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample the trajectory of each particle.
 
@@ -23,7 +23,7 @@ Returns a [`BranchingProcessNode`](@ref) representing the tree structure.
 
 See also: [SDE problems](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/), [`sample_lifetime`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
-function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=nothing; kwargs...) where {P<:SciMLBase.AbstractDEProblem, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
+function solve_and_split(prob::P, branchrate::R, nchild::O, alg::A=nothing; kwargs...) where {P<:SciMLBase.AbstractDEProblem, R<:Real, O<:Union{Integer,DiscreteUnivariateDistribution}, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
     # sample the lifetime of the current particle
     τ = sample_lifetime(branchrate)
 
@@ -45,7 +45,7 @@ function solve_and_split_constantrate(prob::P, branchrate::R, nchild::O, alg::A=
         # sample the number of children
         nc = sample_offspring(nchild)
         #  return a BranchingProcessNode with the solution for the current branch and recursively solve its children
-        children = [solve_and_split_constantrate(newprob, branchrate, nchild, alg; kwargs...) for _ in 1:nc]
+        children = [solve_and_split(newprob, branchrate, nchild, alg; kwargs...) for _ in 1:nc]
         return BranchingProcessNode(sol, children)
     end
 end
