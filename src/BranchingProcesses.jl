@@ -29,7 +29,7 @@ include("utils.jl")
 # exported names
 export ConstantRateBranchingProblem, BranchingProcessSolution, BranchingProcessNode, ReducedBranchingProcessSolution
 export solve, solve_and_split, sample_lifetime, sample_offspring,remake_initial_condition
-export tip_values, get_timespan, reduce_tree, tree_height, node_generation
+export tip_values, get_timespan, reduce_tree, node_generations
 
 
 end

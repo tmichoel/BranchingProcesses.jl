@@ -12,12 +12,14 @@ end
     # find the total timespan of the solution
     tmin = tree.sol.t[1]
     tmax = maximum([node.sol.t[end] for node in nodes])
-    # compute the height of the tree to determine the number of colors needed
-    height = tree_height(tree)
+    # compute the height of the tree using AbstractTrees.treeheight
+    height = AbstractTrees.treeheight(tree)
+    # pre-compute generations for all nodes
+    generations = node_generations(tree)
     # create a path series with trajectories for each node for all variables in idxs
     for node in nodes
-        # compute the generation (distance from root) of this node
-        gen = node_generation(tree, node)
+        # get the generation (distance from root) of this node
+        gen = generations[node]
         # map generation to a color from the colorscheme
         # normalize generation to [0, 1] based on tree height
         color_idx = height > 0 ? gen / height : 0.0

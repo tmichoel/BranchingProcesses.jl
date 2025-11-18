@@ -65,40 +65,23 @@ function get_timespan(sol::T) where T<:BranchingProcessSolution
 end
 
 """
-    tree_height(node::BranchingProcessNode)
+    node_generations(root::BranchingProcessNode)
 
-Get the height of a tree rooted at `node`, defined as the maximum distance from the root to any leaf.
-Returns 0 if the node is a leaf.
+Compute the generation (distance from root) for all nodes in the tree.
+Returns a dictionary mapping each node to its generation, where the root has generation 0,
+its direct children have generation 1, etc.
 """
-function tree_height(node::BranchingProcessNode)
-    if isempty(node.children)
-        return 0
-    else
-        return 1 + maximum(tree_height(child) for child in node.children)
-    end
-end
-
-"""
-    node_generation(root::BranchingProcessNode, target::BranchingProcessNode)
-
-Compute the generation (distance from root) of a target node in the tree.
-Returns 0 if target is the root, 1 if target is a direct child of root, etc.
-Returns -1 if the target is not found in the tree rooted at root.
-"""
-function node_generation(root::BranchingProcessNode, target::BranchingProcessNode)
-    # Check if root is the target
-    if root === target
-        return 0
-    end
+function node_generations(root::BranchingProcessNode)
+    generations = Dict{BranchingProcessNode, Int}()
     
-    # Search in children
-    for child in root.children
-        gen = node_generation(child, target)
-        if gen >= 0
-            return gen + 1
+    # Helper function to recursively compute generations
+    function compute_gen!(node::BranchingProcessNode, gen::Int)
+        generations[node] = gen
+        for child in node.children
+            compute_gen!(child, gen + 1)
         end
     end
     
-    # Not found
-    return -1
+    compute_gen!(root, 0)
+    return generations
 end
