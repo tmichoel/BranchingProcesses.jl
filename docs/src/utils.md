@@ -7,6 +7,7 @@ CurrentModule = BranchingProcesses
 ```@docs
 tip_values
 reduce_tree
+node_generations
 ```
 
 ```@docs
