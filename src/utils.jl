@@ -63,3 +63,25 @@ function get_timespan(sol::T) where T<:BranchingProcessSolution
     tstop = maximum([node.sol.t[end] for node in Leaves(sol.tree)])
     return (tstart,tstop)
 end
+
+"""
+    node_generations(root::BranchingProcessNode)
+
+Compute the generation (distance from root) for all nodes in the tree.
+Returns a dictionary mapping each node to its generation, where the root has generation 0,
+its direct children have generation 1, etc.
+"""
+function node_generations(root::BranchingProcessNode)
+    generations = Dict{BranchingProcessNode, Int}()
+    
+    # Helper function to recursively compute generations
+    function compute_gen!(node::BranchingProcessNode, gen::Int)
+        generations[node] = gen
+        for child in node.children
+            compute_gen!(child, gen + 1)
+        end
+    end
+    
+    compute_gen!(root, 0)
+    return generations
+end

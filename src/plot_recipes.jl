@@ -2,7 +2,7 @@
     sol.tree
 end
 
-@recipe function f(tree::T; branchpoints=false, idxs=[1]) where T <: BranchingProcessNode
+@recipe function f(tree::T; branchpoints=false, idxs=[1], colorscheme=ColorSchemes.RdYlBu) where T <: BranchingProcessNode
     # set a default value for some attributes
     xlabel --> "t"
     ylabel --> "u"
@@ -12,10 +12,22 @@ end
     # find the total timespan of the solution
     tmin = tree.sol.t[1]
     tmax = maximum([node.sol.t[end] for node in nodes])
+    # compute the height of the tree using AbstractTrees.treeheight
+    height = AbstractTrees.treeheight(tree)
+    # pre-compute generations for all nodes
+    generations = node_generations(tree)
     # create a path series with trajectories for each node for all variables in idxs
     for node in nodes
+        # get the generation (distance from root) of this node
+        gen = generations[node]
+        # map generation to a color from the colorscheme
+        # normalize generation to [0, 1] based on tree height
+        color_idx = height > 0 ? gen / height : 0.0
+        node_color = get(colorscheme, color_idx)
+        
         @series begin
             seriestype := :path
+            linecolor := node_color
             #linewidth --> 2
             idxs --> idxs  # Use idxs instead of vars
             node.sol

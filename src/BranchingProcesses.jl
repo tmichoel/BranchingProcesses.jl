@@ -13,6 +13,7 @@ module BranchingProcesses
 
 # dependencies
 using AbstractTrees
+using ColorSchemes
 using Distributions
 using DocStringExtensions
 using RecipesBase
@@ -28,7 +29,7 @@ include("utils.jl")
 # exported names
 export ConstantRateBranchingProblem, BranchingProcessSolution, BranchingProcessNode, ReducedBranchingProcessSolution
 export solve, solve_and_split, sample_lifetime, sample_offspring,remake_initial_condition
-export tip_values, get_timespan, reduce_tree
+export tip_values, get_timespan, reduce_tree, node_generations
 
 
 end
