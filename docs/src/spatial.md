@@ -45,3 +45,10 @@ create_spatial_layout
 spatial_heatmap_data
 get_time_series_frames
 ```
+
+## Internal Helper Functions
+
+```@docs
+_random_direction
+_nodes_alive_at_time
+```
