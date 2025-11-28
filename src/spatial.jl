@@ -6,10 +6,6 @@ BranchingProcessSolution tree to model cell proliferation where daughter
 cells stay in close physical proximity after division.
 """
 
-# Type alias for spatial positions
-const Position2D = Vector{Float64}
-const Position3D = Vector{Float64}
-
 """
 $(TYPEDEF)
 
@@ -163,7 +159,7 @@ function relax_positions!(spatial_tree::SpatialTree;
     # Get nodes to relax based on time
     nodes_to_relax = if time === nothing
         # Use leaf nodes
-        collect(Leaves(spatial_tree.tree))
+        collect(AbstractTrees.Leaves(spatial_tree.tree))
     else
         # Get nodes alive at the specified time
         _nodes_alive_at_time(spatial_tree.tree, time)
@@ -221,7 +217,7 @@ Get all nodes that are "alive" at time t (their solution spans time t).
 function _nodes_alive_at_time(tree::BranchingProcessNode, t::Float64)
     alive_nodes = typeof(tree)[]
     
-    for node in PreOrderDFS(tree)
+    for node in AbstractTrees.PreOrderDFS(tree)
         sol = node.sol
         if sol.t[1] <= t <= sol.t[end]
             push!(alive_nodes, node)
@@ -271,7 +267,7 @@ function normalize_positions!(spatial_tree::SpatialTree;
     
     # Get reference nodes for computing current bounds
     reference_nodes = if time === nothing
-        collect(Leaves(spatial_tree.tree))
+        collect(AbstractTrees.Leaves(spatial_tree.tree))
     else
         _nodes_alive_at_time(spatial_tree.tree, time)
     end
@@ -346,7 +342,7 @@ A tuple of (nodes, positions) where positions is a matrix with each column
 being a node's position.
 """
 function get_leaf_positions(spatial_tree::SpatialTree)
-    leaves = collect(Leaves(spatial_tree.tree))
+    leaves = collect(AbstractTrees.Leaves(spatial_tree.tree))
     positions = zeros(spatial_tree.dim, length(leaves))
     
     for (i, leaf) in enumerate(leaves)
@@ -399,7 +395,7 @@ function get_values_at_positions(spatial_tree::SpatialTree;
     
     if time === nothing
         # Use leaf nodes at their final time
-        leaves = collect(Leaves(spatial_tree.tree))
+        leaves = collect(AbstractTrees.Leaves(spatial_tree.tree))
         nodes = leaves
         values = Float64[]
         
