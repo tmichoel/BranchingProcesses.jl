@@ -34,7 +34,6 @@ makedocs(
         "Introduction" => "index.md",
         "Solvers" => "solvers.md",
         "Types" => "types.md",
-        "Spatial Mapping" => "spatial.md",
         "Utilities" => "utils.md",
         "Examples" => [
             "Branching Brownian motion" => "examples/branching-brownian-motion.md",
