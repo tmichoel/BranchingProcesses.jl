@@ -8,20 +8,16 @@ AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
 ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
-Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
-StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 
 [compat]
 AbstractTrees = "0.4"
 ColorSchemes = "3.31.0"
 Distributions = "0.25"
 DocStringExtensions = "0.9"
-Random = "1.11.0"
 RecipesBase = "1"
 SciMLBase = "2"
-StochasticDiffEq = "6.84.0"
 julia = "1.6"
 
 [extras]
