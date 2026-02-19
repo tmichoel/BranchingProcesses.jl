@@ -58,20 +58,20 @@ end
     xlabel --> "t"
     ylabel --> "u"
     
-    # Extract variable names from the branching problem
-    original_var_names = get_variable_names_from_problem(sol.prob)
-    n_reduced_vars = length(sol.u[1])
-    n_original_vars = original_var_names !== nothing ? length(original_var_names) : 0
+    # # Extract variable names from the branching problem
+    # original_var_names = get_variable_names_from_problem(sol.prob)
+    # n_reduced_vars = length(sol.u[1])
+    # n_original_vars = original_var_names !== nothing ? length(original_var_names) : 0
     
-    # Generate appropriate labels based on variable count match
-    labels = generate_reduced_labels(original_var_names, n_reduced_vars, n_original_vars, 
-                                   sol.reduction, sol.transform)
+    # # Generate appropriate labels based on variable count match
+    # labels = generate_reduced_labels(original_var_names, n_reduced_vars, n_original_vars, 
+    #                                sol.reduction, sol.transform)
 
     if idxs === nothing
         # Plot all variables
         for i in 1:length(sol.u[1])
             @series begin
-                label --> labels[i]
+               # label --> labels[i]
                 sol.t, [u[i] for u in sol.u]
             end
         end
@@ -79,7 +79,7 @@ end
         # Plot only specified indices
         for i in idxs
             @series begin
-                label --> var_names !== nothing ? string(var_names[i]) : "u[$i]"
+               # label --> var_names !== nothing ? string(var_names[i]) : "u[$i]"
                 sol.t, [u[i] for u in sol.u]
             end
         end
