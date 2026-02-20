@@ -51,6 +51,37 @@ function solve_and_split(prob::P, lifetime::L, nchild::O, alg::A=nothing; kwargs
 end
 
 """
+    SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, kwargs...)
+
+Remake a [`ConstantRateBranchingProblem`](@ref) with modified fields. The fields `prob`, `lifetime`, and `nchild` can be replaced directly. Any additional keyword arguments (e.g. `u0`, `tspan`, `p`) that are not fields of `ConstantRateBranchingProblem` are passed to `SciMLBase.remake(bp.prob; kwargs...)` to modify the single-particle dynamics problem.
+
+## Examples
+
+```julia
+# Change the number of children
+new_bp = remake(bp, nchild=3)
+
+# Change initial condition of the inner problem (shortcut syntax)
+new_bp = remake(bp, u0=1.0)
+
+# Change both the lifetime and initial condition
+new_bp = remake(bp, lifetime=Exponential(0.5), u0=1.0)
+```
+"""
+function SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, kwargs...)
+    new_prob = if !ismissing(prob)
+        isempty(kwargs) ? prob : SciMLBase.remake(prob; kwargs...)
+    elseif !isempty(kwargs)
+        SciMLBase.remake(bp.prob; kwargs...)
+    else
+        bp.prob
+    end
+    new_lifetime = ismissing(lifetime) ? bp.lifetime : lifetime
+    new_nchild = ismissing(nchild) ? bp.nchild : nchild
+    return ConstantRateBranchingProblem(new_prob, new_lifetime, new_nchild)
+end
+
+"""
     remake_initial_condition(prob::P, tspan, u0=nothing) where P<:SciMLBase.AbstractDEProblem
 
 Remake the problem `prob` with a new timespan `tspan` and, optionally, a new initial condition `u0`. Works for SDEProblems and JumpProblems. Throws an error for NoiseProblems.
