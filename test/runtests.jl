@@ -122,3 +122,57 @@ end
         @test new_bp.nchild == bp.nchild
     end
 end
+
+@testset "remake tests - JumpProblem" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+
+    u0 = [10]
+    tspan = (0.0, 2.0)
+    p = [1.0]
+    rate(u, p, t) = p[1] * u[1]
+    affect!(integrator) = integrator.u[1] += 1
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp_jump = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+
+    @testset "remake nchild with JumpProblem" begin
+        new_bp = remake(bp_jump, nchild=3)
+        @test new_bp.nchild == 3
+        @test new_bp.lifetime == bp_jump.lifetime
+        @test new_bp.prob === bp_jump.prob
+    end
+
+    @testset "remake lifetime with JumpProblem" begin
+        new_lifetime = Exponential(2.0)
+        new_bp = remake(bp_jump, lifetime=new_lifetime)
+        @test new_bp.lifetime === new_lifetime
+        @test new_bp.nchild == bp_jump.nchild
+        @test new_bp.prob === bp_jump.prob
+    end
+
+    @testset "remake inner JumpProblem directly" begin
+        new_disc_prob = DiscreteProblem([20], tspan, p)
+        new_jump_prob = JumpProblem(new_disc_prob, Direct(), jump)
+        new_bp = remake(bp_jump, prob=new_jump_prob)
+        @test new_bp.prob === new_jump_prob
+        @test new_bp.lifetime == bp_jump.lifetime
+        @test new_bp.nchild == bp_jump.nchild
+    end
+
+    @testset "remake shortcut u0 with JumpProblem" begin
+        new_bp = remake(bp_jump, u0=[20])
+        @test new_bp.prob.prob.u0 == [20]
+        @test new_bp.lifetime == bp_jump.lifetime
+        @test new_bp.nchild == bp_jump.nchild
+    end
+
+    @testset "remake shortcut tspan with JumpProblem" begin
+        new_bp = remake(bp_jump, tspan=(0.0, 4.0))
+        @test new_bp.prob.prob.tspan == (0.0, 4.0)
+        @test new_bp.lifetime == bp_jump.lifetime
+        @test new_bp.nchild == bp_jump.nchild
+    end
+end
