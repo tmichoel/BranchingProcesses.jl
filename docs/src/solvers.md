@@ -7,8 +7,14 @@ CurrentModule = BranchingProcesses
 ```@docs
 solve
 solve_and_split
+remake
 sample_lifetime
 sample_offspring
-remake_initial_condition
 get_timespan
+```
+
+## Deprecated
+
+```@docs
+remake_initial_condition
 ```
