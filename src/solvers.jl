@@ -68,7 +68,7 @@ end
 """
     SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, kwargs...)
 
-Remake a [`ConstantRateBranchingProblem`](@ref) with modified fields. The fields `prob`, `lifetime`, and `nchild` can be replaced directly. Any additional keyword arguments (e.g. `u0`, `tspan`, `p`) that are not fields of `ConstantRateBranchingProblem` are forwarded to modify the single-particle dynamics problem. For `SDEProblem`s, kwargs are passed directly to `SciMLBase.remake(bp.prob; kwargs...)`; for `JumpProblem`s, they are applied to the inner `bp.prob.prob` field.
+Remake a [`ConstantRateBranchingProblem`](@ref) with modified fields. The fields `prob`, `lifetime`, and `nchild` can be replaced directly. Any additional keyword arguments (e.g. `u0`, `tspan`, `p`) that are not fields of `ConstantRateBranchingProblem` are passed to `SciMLBase.remake(bp.prob; kwargs...)` to modify the single-particle dynamics problem. This works for both `SDEProblem` and `JumpProblem` inner problems.
 
 ## Examples
 
@@ -85,9 +85,9 @@ new_bp = remake(bp, lifetime=Exponential(0.5), u0=1.0)
 """
 function SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, kwargs...)
     new_prob = if !ismissing(prob)
-        isempty(kwargs) ? prob : _remake_inner_prob(prob; kwargs...)
+        isempty(kwargs) ? prob : SciMLBase.remake(prob; kwargs...)
     elseif !isempty(kwargs)
-        _remake_inner_prob(bp.prob; kwargs...)
+        SciMLBase.remake(bp.prob; kwargs...)
     else
         bp.prob
     end
@@ -95,11 +95,6 @@ function SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifeti
     new_nchild = ismissing(nchild) ? bp.nchild : nchild
     return ConstantRateBranchingProblem(new_prob, new_lifetime, new_nchild)
 end
-
-# Helper to remake the inner single-particle dynamics problem.
-# JumpProblems require kwargs to be applied to the inner prob.prob field.
-_remake_inner_prob(prob::SciMLBase.AbstractDEProblem; kwargs...) = SciMLBase.remake(prob; kwargs...)
-_remake_inner_prob(prob::SciMLBase.AbstractJumpProblem; kwargs...) = SciMLBase.remake(prob, prob=SciMLBase.remake(prob.prob; kwargs...))
 
 """
     remake_initial_condition(prob::P, tspan, u0=nothing) where P<:SciMLBase.AbstractDEProblem
