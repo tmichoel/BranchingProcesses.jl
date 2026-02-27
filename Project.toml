@@ -1,6 +1,6 @@
 name = "BranchingProcesses"
 uuid = "04adb457-7d2c-431a-93f1-03b44ce12db8"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Tom Michoel"]
 
 [deps]
