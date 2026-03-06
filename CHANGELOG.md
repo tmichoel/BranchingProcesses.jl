@@ -4,6 +4,10 @@
 
 [Diff since v0.2.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.2.0...v0.3.0)
 
+## Breaking Changes
+
+- **`JumpProcesses` added as a required runtime dependency**: `JumpProcesses` was previously only a test dependency. It is now a full runtime dependency listed in `[deps]`. Downstream packages that have restrictive compat bounds on `JumpProcesses` may need to update their compatibility entries.
+
 ## New Features
 
 - **`SciMLBase.remake` support for `ConstantRateBranchingProblem`**: Added a `SciMLBase.remake` method for `ConstantRateBranchingProblem` that follows the DifferentialEquations.jl convention. Accepts `lifetime` and `nchild` keyword arguments for direct field replacement on the branching problem, and forwards any other keyword arguments (e.g. `u0`, `tspan`, `p`) to `SciMLBase.remake` on the inner single-particle dynamics problem. This works uniformly for both `SDEProblem` and `JumpProblem` inner problems.
