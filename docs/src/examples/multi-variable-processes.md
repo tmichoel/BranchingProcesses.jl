@@ -23,9 +23,7 @@ using DifferentialEquations, JumpProcesses
 u0 = [:S => 30, :E => 10, :SE => 0, :P => 0]
 tspan = (0., 100.)
 ps = [:kB => 0.00166, :kD => 0.0001, :kP => 0.1]
-
-jinput = JumpInputs(mm_system, u0, tspan, ps)
-jprob = JumpProblem(jinput)
+jprob = JumpProblem(mm_system, u0, tspan, ps)
 ```
 
 A trajectory for a single cell can be sampled and plotted:

@@ -18,11 +18,10 @@ rn = @reaction_network begin
 end
 
 using DifferentialEquations, JumpProcesses
-u0 = [200]
+u0 = [:X => 200]
 tspan = (0.0, 3.0)
 p = [:kp => 50.0, :kd => 0.25]
-jinput = JumpInputs(rn, u0, tspan, p)
-jprob = JumpProblem(jinput)
+jprob = JumpProblem(rn, u0, tspan, p)
 ```
 and then the branching process,
 
@@ -95,8 +94,7 @@ end
 u0 = [:S => 30, :E => 10, :SE => 0, :P => 0]
 tspan = (0., 100.)
 ps = [:kB => 0.00166, :kD => 0.0001, :kP => 0.1]
-jinput = JumpInputs(mm_system, u0, tspan, ps)
-jprob = JumpProblem(jinput)
+jprob = JumpProblem(mm_system, u0, tspan, ps)
 λ = 0.05
 nchild = 2
 bjprob = ConstantRateBranchingProblem(jprob, λ, nchild);

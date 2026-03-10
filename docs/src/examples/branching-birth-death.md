@@ -26,11 +26,10 @@ As explained in the [Catalyst tutorials](https://docs.sciml.ai/Catalyst/stable/i
 
 ```@example bd
 using DifferentialEquations, JumpProcesses
-u0 = [200]
+u0 = [:X => 200]
 tspan = (0.0, 3.0)
 p = [:kp => 50.0, :kd => 0.25]
-jinput = JumpInputs(rn, u0, tspan, p)
-jprob = JumpProblem(jinput)
+jprob = JumpProblem(rn, u0, tspan, p)#(jinput)
 ```
 
 A trajectory for a single cell can be sampled and plotted:

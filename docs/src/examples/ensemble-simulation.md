@@ -21,8 +21,7 @@ end
 u0 = [:W => 1, :M => 0]  # Always start in the wild-type state
 p = [:μ => 0.01]  # Mutation rate
 tspan = (0.0, 10.0)
-dprob = DiscreteProblem(rn, u0, tspan, p)
-jprob = JumpProblem(rn, dprob, Direct())
+jprob = JumpProblem(rn, u0, tspan, p)
 ```
 
 Define a branching process problem:
