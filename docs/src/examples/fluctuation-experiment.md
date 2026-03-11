@@ -27,8 +27,7 @@ We set up the corresponding [`JumpProblem`](https://docs.sciml.ai/JumpProcesses/
 
 ```@example fe
 using DifferentialEquations, JumpProcesses
-dprob  = DiscreteProblem(rn, u0, tspan, p)
-jprob  = JumpProblem(rn, dprob, Direct())
+jprob  = JumpProblem(rn, u0, tspan, p)
 
 using BranchingProcesses
 λ      = 1.0   # branching (cell division) rate
