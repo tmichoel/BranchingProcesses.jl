@@ -42,7 +42,8 @@ makedocs(
             "AbstractTrees interface" => "examples/abstracttrees-interface.md",
             "Multi-variable branching processes" => "examples/multi-variable-processes.md",
             "Ensemble simulations" => "examples/ensemble-simulation.md",
-            "Tree reduction" => "examples/tree-reduction.md"
+            "Tree reduction" => "examples/tree-reduction.md",
+            "Fluctuation experiment" => "examples/fluctuation-experiment.md"
             ]    
         ]
 )

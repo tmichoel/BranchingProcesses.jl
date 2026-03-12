@@ -176,3 +176,78 @@ end
         @test new_bp.nchild == bp_jump.nchild
     end
 end
+
+@testset "fluctuation_experiment tests" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+
+    # Set up a simple JumpProblem branching process
+    u0 = [1]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    affect!(integrator) = (integrator.u[1] += 1)
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+
+    # Distribution for initial states: product_distribution wraps Dirac(1) to produce
+    # a vector [1], matching the u0=[1] type expected by the JumpProblem
+    u0_dist = product_distribution([Dirac(1)])
+
+    @testset "returns EnsembleSolution with correct number of trajectories" begin
+        nclone = 5
+        results = fluctuation_experiment(bp, u0_dist, nclone;
+                                         alg=SSAStepper(),
+                                         ensemble_alg=EnsembleSerial())
+        @test length(results) == nclone
+    end
+
+    @testset "each element is a ReducedBranchingProcessSolution" begin
+        nclone = 3
+        results = fluctuation_experiment(bp, u0_dist, nclone;
+                                         alg=SSAStepper(),
+                                         ensemble_alg=EnsembleSerial())
+        for sol in results
+            @test sol isa ReducedBranchingProcessSolution
+        end
+    end
+
+    @testset "reduced solution has correct time points" begin
+        nclone = 2
+        dt = 0.1
+        results = fluctuation_experiment(bp, u0_dist, nclone;
+                                         alg=SSAStepper(),
+                                         ensemble_alg=EnsembleSerial(),
+                                         dt=dt)
+        for sol in results
+            @test sol.t[1] ≈ tspan[1]
+            @test sol.t[end] ≈ tspan[2]
+            @test length(sol.t) == length(collect(tspan[1]:dt:tspan[2]))
+        end
+    end
+
+    @testset "custom reduction function stored in solution" begin
+        nclone = 3
+        results = fluctuation_experiment(bp, u0_dist, nclone;
+                                         reduction=sum,
+                                         alg=SSAStepper(),
+                                         ensemble_alg=EnsembleSerial())
+        for sol in results
+            @test sol isa ReducedBranchingProcessSolution
+            @test sol.reduction === sum
+        end
+    end
+
+    @testset "reduced solution values are non-negative" begin
+        nclone = 3
+        results = fluctuation_experiment(bp, u0_dist, nclone;
+                                         alg=SSAStepper(),
+                                         ensemble_alg=EnsembleSerial())
+        for sol in results
+            @test all(v[1] >= 0 for v in sol.u)
+        end
+    end
+end
