@@ -18,8 +18,8 @@ rn = @reaction_network begin
     μ, W --> M
 end
 u0 = [:W => 1, :M => 0]
-p  = [:μ => 0.01]
-tspan = (0.0, 10.0)
+p  = [:μ => 0.1]
+tspan = (0.0, 5.0)
 nothing # hide
 ```
 
@@ -53,7 +53,7 @@ using Random # hide
 Random.seed!(42) # hide
 results = fluctuation_experiment(bjprob, u0_dist, 100;
                                  alg=SSAStepper(),
-                                 ensemble_alg=EnsembleSerial(),
+                                 ensemble_alg=EnsembleThreads(),
                                  dt=0.1);
 nothing # hide
 ```
@@ -71,7 +71,7 @@ The main interest in a fluctuation experiment is the *distribution* of a quantit
 
 ```@example fe
 mutant_counts = [sol.u[end][2] for sol in results]
-histogram(mutant_counts; bins=0:maximum(mutant_counts)+1,
+histogram(mutant_counts; #bins=0:maximum(mutant_counts)+1,
           xlabel="Mutant cell count", ylabel="Number of clones",
           label="", title="Luria-Delbrück distribution")
 ```
@@ -83,10 +83,10 @@ The characteristic feature of the Luria-Delbrück distribution is its heavy tail
 [`fluctuation_experiment`](@ref) shines when the initial condition itself varies across clones. As a second example we use the [branching Ornstein-Uhlenbeck process](./branching-oup.md) and draw each clone's initial state from a normal distribution:
 
 ```@example fe
-f(u,p,t) = p[2]*(p[1]-u)
+f(u,p,t) = p[2]*(p[1]-u)s
 g(u,p,t) = p[3]
 μ_ou = 2.0; α = 5.0; σ = 0.5
-oup = SDEProblem(f, g, μ_ou, (0.0, 3.0), (μ_ou, α, σ))
+oup = SDEProblem(f, g, μ_ou, (0.0, 5.0), (μ_ou, α, σ))
 boup = ConstantRateBranchingProblem(oup, 1.0, 2)
 
 u0_dist_ou = Normal(0.0, 1.0)  # clones start away from the OUP steady state
@@ -96,7 +96,8 @@ nothing # hide
 ```@example fe
 Random.seed!(42) # hide
 results_ou = fluctuation_experiment(boup, u0_dist_ou, 20;
-                                    alg=EM(), dt=0.01,
+                                    alg=EM(), solver_kwargs=(; dt=0.01),
+                                    reduce_kwargs=(; dt=0.01),
                                     ensemble_alg=EnsembleSerial());
 nothing # hide
 ```
@@ -120,9 +121,9 @@ By default [`fluctuation_experiment`](@ref) uses `sum` to aggregate cell values 
 ```@example fe
 Random.seed!(42) # hide
 results_max = fluctuation_experiment(boup, u0_dist_ou, 20;
-                                     alg=EM(), dt=0.01,
+                                     alg=EM(), solver_kwargs=(; dt=0.01),
                                      reduction=maximum,
-                                     ensemble_alg=EnsembleSerial());
+                                     ensemble_alg=EnsembleThreads());
 plt2 = plot(; xlabel="t", ylabel="max over cells", legend=false)
 for sol in results_max
     plot!(plt2, sol)
