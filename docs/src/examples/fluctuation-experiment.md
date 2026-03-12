@@ -54,7 +54,7 @@ Random.seed!(42) # hide
 results = fluctuation_experiment(bjprob, u0_dist, 100;
                                  alg=SSAStepper(),
                                  ensemble_alg=EnsembleThreads(),
-                                 dt=0.1);
+                                 reduce_kwargs=(; dt=0.1));
 nothing # hide
 ```
 
