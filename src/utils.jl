@@ -96,7 +96,7 @@ function node_generations(root::BranchingProcessNode)
 end
 
 """
-    fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, kwargs...)
+    fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple())
 
 Simulate a Luria-Delbrück fluctuation experiment by running `nclone` independent branching
 process simulations, each starting from a different initial state sampled from `u0_dist`.
@@ -126,8 +126,10 @@ interface, and each clone's branching tree is reduced to a time series via [`red
   `EnsembleThreads()` (default), and `EnsembleDistributed()`.
 - `alg=nothing`: The algorithm passed to `solve` for each individual trajectory.
   Defaults to `nothing` (automatic algorithm selection).
-- `kwargs...`: Additional keyword arguments forwarded to [`reduce_tree`](@ref)
-  (e.g. `dt`, `transform`, `store_original`).
+- `solver_kwargs=NamedTuple()`: Additional keyword arguments passed to the `solve` function
+  for each individual trajectory (e.g. `(; dt=0.1, saveat=0:0.1:5, reltol=1e-6)`).
+- `reduce_kwargs=NamedTuple()`: Additional keyword arguments passed to [`reduce_tree`](@ref)
+  (e.g. `(; dt=0.01, transform=log, store_original=false)`).
 
 ## Returns
 
@@ -148,12 +150,16 @@ bp = ConstantRateBranchingProblem(prob, 1.0, 2)
 # Simulate 100 clones with initial states drawn from a log-normal distribution
 results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100)
 
-# Access the reduced time series of the first clone
-results[1].t  # time points
-results[1].u  # reduced values at each time point
+# Use different dt for solver and reduce_tree
+results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100;
+                                solver_kwargs=(; dt=0.1, saveat=0:0.1:5),
+                                reduce_kwargs=(; dt=0.02, transform=log))
 
-# Use a custom reduction function (e.g. maximum over particles)
-results_max = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100; reduction=maximum)
+# Use a custom reduction function with specific solver tolerances
+results_max = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100; 
+                                   reduction=maximum,
+                                   solver_kwargs=(; reltol=1e-8, abstol=1e-10),
+                                   reduce_kwargs=(; store_original=false))
 ```
 
 See also: [`ConstantRateBranchingProblem`](@ref), [`reduce_tree`](@ref),
@@ -165,9 +171,10 @@ function fluctuation_experiment(bp::ConstantRateBranchingProblem,
                                 reduction=sum,
                                 ensemble_alg=EnsembleThreads(),
                                 alg=nothing,
-                                kwargs...)
+                                solver_kwargs=NamedTuple(),
+                                reduce_kwargs=NamedTuple())
     prob_func = (prob, i, _) -> remake(prob, u0=rand(u0_dist))
-    output_func = (sol, i) -> (reduce_tree(sol; reduction=reduction, kwargs...), false)
+    output_func = (sol, i) -> (reduce_tree(sol; reduction=reduction, reduce_kwargs...), false)
     ep = EnsembleProblem(bp; prob_func=prob_func, output_func=output_func)
-    return solve(ep, alg, ensemble_alg; trajectories=nclone)
+    return solve(ep, alg, ensemble_alg; trajectories=nclone, solver_kwargs...)
 end
