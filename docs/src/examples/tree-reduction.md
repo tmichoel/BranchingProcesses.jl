@@ -61,8 +61,8 @@ plot(sol_red)
 It is possible to replace the default summing of values to taking a product, although use cases for this in practice may be rather limited:
 
 ```@example tr
-reduce_tree(sol; dt=0.01, reduction="prod");
-nothing # hide
+sol_red = reduce_tree(sol; dt=0.01, reduction="prod");
+plot(sol_red)
 ```
 
 ## Applying transformations

@@ -30,7 +30,7 @@ function reduce_tree(sol::BranchingProcessSolution;
     reduce_fn = if reduction === "sum"
         sum
     elseif reduction === "prod"
-        prod
+        vals -> reduce((a,b) -> a .* b, vals)
     elseif reduction isa AbstractString
         throw(ArgumentError("string reduction must be either \"sum\" or \"prod\""))
     else
