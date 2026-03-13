@@ -83,7 +83,7 @@ The characteristic feature of the Luria-Delbrück distribution is its heavy tail
 [`fluctuation_experiment`](@ref) shines when the initial condition itself varies across clones. As a second example we use the [branching Ornstein-Uhlenbeck process](./branching-oup.md) and draw each clone's initial state from a normal distribution:
 
 ```@example fe
-f(u,p,t) = p[2]*(p[1]-u)s
+f(u,p,t) = p[2]*(p[1]-u)
 g(u,p,t) = p[3]
 μ_ou = 2.0; α = 5.0; σ = 0.5
 oup = SDEProblem(f, g, μ_ou, (0.0, 5.0), (μ_ou, α, σ))
