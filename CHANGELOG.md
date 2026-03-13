@@ -1,5 +1,61 @@
 # Changelog
 
+## BranchingProcesses v0.4.0
+
+[Diff since v0.3.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.3.0...v0.4.0)
+
+## Breaking Changes
+
+- No breaking changes in this release.
+
+## New Features
+
+- **`fluctuation_experiment` function**: Added a new `fluctuation_experiment` function for running Luria-Delbrück-style fluctuation experiments via the [SciML `EnsembleProblem`](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/) interface. Given a `ConstantRateBranchingProblem`, a distribution `u0_dist` from which each clone's initial condition is independently sampled, and a number of clones `nclone`, it simulates all clones in parallel and returns an `EnsembleSolution` of `ReducedBranchingProcessSolution` objects. Supports the following keyword arguments:
+
+  - `reduction=sum`: reduction function passed to `reduce_tree` to aggregate particle values at each time point.
+  - `ensemble_alg=EnsembleThreads()`: SciML ensemble algorithm controlling parallelisation strategy.
+  - `alg=nothing`: solver algorithm for individual trajectories (defaults to automatic selection).
+  - `solver_kwargs=NamedTuple()`: keyword arguments forwarded to `solve` for each trajectory (e.g. `(; dt=0.1, saveat=0:0.1:5)`).
+  - `reduce_kwargs=NamedTuple()`: keyword arguments forwarded to `reduce_tree` for each clone (e.g. `(; dt=0.01, transform=log)`).
+
+  ```julia
+  using BranchingProcesses, Distributions, StochasticDiffEq
+
+  f(u, p, t) = 0.0
+  g(u, p, t) = 0.5
+  prob = SDEProblem(f, g, 1.0, (0.0, 5.0))
+  bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+
+  # 100 clones, each starting from a log-normal initial state
+  results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100)
+
+  # Separate solver and reduce_tree keyword arguments
+  results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100;
+                                   solver_kwargs=(; dt=0.1, saveat=0:0.1:5),
+                                   reduce_kwargs=(; dt=0.02, transform=log))
+  ```
+
+## Bug Fixes
+
+- **`reduce_tree` `"prod"` reduction**: Fixed the built-in `"prod"` string reduction to use element-wise multiplication (`.*`) instead of scalar multiplication when particle values are vectors. This prevents a dimension-mismatch error for vector-valued branching processes.
+- **`fluctuation_experiment` keyword argument handling**: Fixed keyword argument splatting errors by using `NamedTuple()` as the default value for `solver_kwargs` and `reduce_kwargs`, ensuring correct forwarding to `solve` and `reduce_tree` respectively.
+
+## Documentation
+
+- Added a new example page documenting the `fluctuation_experiment` function with a classical Luria-Delbrück birth-death process and an Ornstein-Uhlenbeck branching process.
+- Updated documentation for compatibility with Catalyst v16.
+
+## Internal Changes
+
+- Bump `julia-actions/cache` from 2 to 3 (#21).
+
+## Merged pull requests
+
+- Add `fluctuation_experiment` for Luria-Delbrück simulations via SciML EnsembleProblem (#22) (@Copilot)
+- Bump julia-actions/cache from 2 to 3 (#21) (@dependabot[bot])
+
+---
+
 ## BranchingProcesses v0.3.0
 
 [Diff since v0.2.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.2.0...v0.3.0)
