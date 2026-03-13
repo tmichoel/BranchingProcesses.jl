@@ -201,7 +201,7 @@ end
         nclone = 5
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
-                                         ensemble_alg=EnsembleSerial())
+                                         ensemble_alg=EnsembleThreads())
         @test length(results) == nclone
     end
 
@@ -209,7 +209,7 @@ end
         nclone = 3
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
-                                         ensemble_alg=EnsembleSerial())
+                                         ensemble_alg=EnsembleThreads())
         for sol in results
             @test sol isa ReducedBranchingProcessSolution
         end
@@ -220,8 +220,8 @@ end
         dt = 0.1
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
-                                         ensemble_alg=EnsembleSerial(),
-                                         dt=dt)
+                                         ensemble_alg=EnsembleThreads(),
+                                         reduce_kwargs=(; dt=dt))
         for sol in results
             @test sol.t[1] ≈ tspan[1]
             @test sol.t[end] ≈ tspan[2]
@@ -234,7 +234,7 @@ end
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          reduction=sum,
                                          alg=SSAStepper(),
-                                         ensemble_alg=EnsembleSerial())
+                                         ensemble_alg=EnsembleThreads())
         for sol in results
             @test sol isa ReducedBranchingProcessSolution
             @test sol.reduction === sum
@@ -245,7 +245,7 @@ end
         nclone = 3
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
-                                         ensemble_alg=EnsembleSerial())
+                                         ensemble_alg=EnsembleThreads())
         for sol in results
             @test all(v[1] >= 0 for v in sol.u)
         end
