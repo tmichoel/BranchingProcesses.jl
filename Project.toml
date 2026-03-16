@@ -20,13 +20,14 @@ Distributions = "0.25"
 DocStringExtensions = "0.9"
 JumpProcesses = "9.22.0"
 RecipesBase = "1"
-RecursiveArrayTools = "3.48.0"
+RecursiveArrayTools = "3"
 SciMLBase = "2"
 julia = "1.6"
 
 [extras]
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["JumpProcesses", "Test"]
+test = ["JumpProcesses", "RecursiveArrayTools", "Test"]

@@ -171,12 +171,16 @@ A solution type for the output of [`reduce_tree`](@ref). Contains the reduced ti
 from a branching process tree where values of all particles alive at each time point
 have been combined using a reduction function.
 
+This type is a subtype of [`RecursiveArrayTools.AbstractDiffEqArray`](https://docs.sciml.ai/RecursiveArrayTools/stable/),
+which provides standard indexing, iteration, and time-series interface compatible with
+[`SciMLBase.EnsembleAnalysis`](https://docs.sciml.ai/DiffEqDocs/stable/features/ensemble/).
+
 ## Fields
 
 $(FIELDS)
 
 """
-struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType} <: SciMLBase.AbstractTimeseriesSolution{T,N,uType}
+struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType,PType,SysType} <: RecursiveArrayTools.AbstractDiffEqArray{T,N,uType}
     """The reduced values at each time point."""
     u::uType
     """The time points."""
@@ -199,6 +203,10 @@ struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedTy
     reduction::RedType
     """Original BranchingProcessSolution that was reduced (optional)."""
     original_solution::OrigType
+    """Parameters (unused; included for RecursiveArrayTools.AbstractDiffEqArray compatibility)."""
+    p::PType
+    """Symbolic system (unused; included for RecursiveArrayTools.AbstractDiffEqArray compatibility)."""
+    sys::SysType
 end
 
 # Main constructor
@@ -211,9 +219,11 @@ function ReducedBranchingProcessSolution(u, t;
                                        retcode=SciMLBase.ReturnCode.Success,
                                        transform=identity,
                                        reduction="sum",
-                                       original_solution=nothing)
+                                       original_solution=nothing,
+                                       p=nothing,
+                                       sys=nothing)
     T = eltype(u[1])
-    N = 1
+    N = ndims(u[1]) + 1
     uType = typeof(u)
     tType = typeof(t)
     P = typeof(prob)
@@ -222,9 +232,11 @@ function ReducedBranchingProcessSolution(u, t;
     TransType = typeof(transform)
     RedType = typeof(reduction)
     OrigType = typeof(original_solution)
+    PType = typeof(p)
+    SysType = typeof(sys)
 
-    return ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType}(
-        u, t, prob, alg, dense, interp, tslocation, retcode, transform, reduction, original_solution
+    return ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType,PType,SysType}(
+        u, t, prob, alg, dense, interp, tslocation, retcode, transform, reduction, original_solution, p, sys
     )
 end
 

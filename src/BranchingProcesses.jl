@@ -17,6 +17,7 @@ using ColorSchemes
 using Distributions
 using DocStringExtensions
 using RecipesBase
+using RecursiveArrayTools
 using SciMLBase
 
 

@@ -177,6 +177,100 @@ end
     end
 end
 
+@testset "ReducedBranchingProcessSolution type hierarchy" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+    using RecursiveArrayTools
+
+    u0 = [1]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    affect!(integrator) = (integrator.u[1] += 1)
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+    u0_dist = product_distribution([Dirac(1)])
+
+    results = fluctuation_experiment(bp, u0_dist, 3;
+                                     alg=SSAStepper(),
+                                     ensemble_alg=EnsembleSerial())
+    sol = results.u[1]
+
+    @testset "subtype of AbstractDiffEqArray" begin
+        @test sol isa RecursiveArrayTools.AbstractDiffEqArray
+        @test sol isa RecursiveArrayTools.AbstractVectorOfArray
+    end
+
+    @testset "not a subtype of AbstractTimeseriesSolution" begin
+        @test !(sol isa SciMLBase.AbstractTimeseriesSolution)
+        @test !(sol isa SciMLBase.AbstractSciMLSolution)
+    end
+
+    @testset "AbstractVectorOfArray interface" begin
+        @test length(sol) == length(sol.u)
+        @test sol.u[1] isa AbstractVector
+        @test ndims(sol) == 2
+        @test size(sol) == (length(sol.u[1]), length(sol.u))
+    end
+end
+
+@testset "EnsembleAnalysis compatibility" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+    using RecursiveArrayTools
+
+    u0 = [1]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    affect!(integrator) = (integrator.u[1] += 1)
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+    u0_dist = product_distribution([Dirac(1)])
+
+    results = fluctuation_experiment(bp, u0_dist, 5;
+                                     alg=SSAStepper(),
+                                     ensemble_alg=EnsembleSerial())
+
+    @testset "timeseries_steps_mean" begin
+        m = SciMLBase.EnsembleAnalysis.timeseries_steps_mean(results)
+        @test m isa RecursiveArrayTools.AbstractDiffEqArray
+        @test length(m) == length(results.u[1])
+        @test m.t == results.u[1].t
+    end
+
+    @testset "timeseries_steps_meanvar" begin
+        m, v = SciMLBase.EnsembleAnalysis.timeseries_steps_meanvar(results)
+        @test m isa RecursiveArrayTools.AbstractDiffEqArray
+        @test v isa RecursiveArrayTools.AbstractDiffEqArray
+        @test length(m) == length(results.u[1])
+    end
+
+    @testset "timeseries_steps_median" begin
+        med = SciMLBase.EnsembleAnalysis.timeseries_steps_median(results)
+        @test med isa RecursiveArrayTools.AbstractDiffEqArray
+        @test length(med) == length(results.u[1])
+    end
+
+    @testset "timestep_mean" begin
+        m = SciMLBase.EnsembleAnalysis.timestep_mean(results, 1)
+        @test m isa AbstractVector
+        @test length(m) == length(results.u[1].u[1])
+    end
+
+    @testset "EnsembleSummary" begin
+        summary = SciMLBase.EnsembleSummary(results)
+        @test summary.t == results.u[1].t
+        @test length(summary.u) == length(results.u[1])
+    end
+end
+
 @testset "fluctuation_experiment tests" begin
     using Distributions
     using SciMLBase
