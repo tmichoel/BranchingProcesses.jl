@@ -10,6 +10,7 @@ Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 
 [compat]
@@ -19,6 +20,7 @@ Distributions = "0.25"
 DocStringExtensions = "0.9"
 JumpProcesses = "9.22.0"
 RecipesBase = "1"
+RecursiveArrayTools = "3.48.0"
 SciMLBase = "2"
 julia = "1.6"
 
