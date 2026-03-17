@@ -1,5 +1,45 @@
 # Changelog
 
+## BranchingProcesses v0.5.0
+
+[Diff since v0.4.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.4.0...v0.5.0)
+
+## Breaking Changes
+
+- **`ReducedBranchingProcessSolution` type hierarchy change**: `ReducedBranchingProcessSolution` no longer subtypes `SciMLBase.AbstractTimeseriesSolution`. It now subtypes `RecursiveArrayTools.AbstractDiffEqArray` directly. Code that checks `sol isa SciMLBase.AbstractTimeseriesSolution` (or `isa SciMLBase.AbstractSciMLSolution`) will now return `false` for `ReducedBranchingProcessSolution` instances and must be updated accordingly.
+
+## New Features
+
+- **`SciMLBase.EnsembleAnalysis` compatibility**: `ReducedBranchingProcessSolution` now subtypes `RecursiveArrayTools.AbstractDiffEqArray`, which makes it fully compatible with `SciMLBase.EnsembleAnalysis`. Functions such as `EnsembleAnalysis.timeseries_steps_mean`, `EnsembleAnalysis.timeseries_steps_meanvar`, `EnsembleAnalysis.timestep_mean`, and `EnsembleSummary` now work directly on the output of `fluctuation_experiment`.
+
+  ```julia
+  using BranchingProcesses, Distributions, JumpProcesses, SciMLBase
+
+  results = fluctuation_experiment(bp, u0_dist, 100; alg=SSAStepper())
+
+  # All of these now work:
+  SciMLBase.EnsembleAnalysis.timeseries_steps_mean(results)
+  SciMLBase.EnsembleAnalysis.timeseries_steps_meanvar(results)
+  SciMLBase.EnsembleAnalysis.timestep_mean(results, i)
+  SciMLBase.EnsembleSummary(results)
+  ```
+
+- **`RecursiveArrayTools` added as a runtime dependency**: `RecursiveArrayTools` is now a full runtime dependency (compat `"3"`), providing the `AbstractDiffEqArray` interface used by `ReducedBranchingProcessSolution`.
+
+## Bug Fixes
+
+- **`ReducedBranchingProcessSolution` array dimension parameter**: Fixed the type parameter `N` (array dimensionality) from the previously hardcoded value `1` to the correct `ndims(u[1]) + 1`, ensuring correctness for vector-valued branching processes.
+
+## Internal Changes
+
+- Added `p` and `sys` fields to `ReducedBranchingProcessSolution` (both default to `nothing`) for compatibility with `RecursiveArrayTools.AbstractDiffEqArray`'s `SymbolicIndexingInterface`.
+
+## Merged pull requests
+
+- Make `ReducedBranchingProcessSolution` a subtype of `RecursiveArrayTools.AbstractDiffEqArray` (#24) (@Copilot)
+
+---
+
 ## BranchingProcesses v0.4.0
 
 [Diff since v0.3.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.3.0...v0.4.0)
