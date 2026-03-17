@@ -96,6 +96,74 @@ function node_generations(root::BranchingProcessNode)
 end
 
 """
+    timestep_crosscov(sim, i)
+
+Compute the same-time cross-covariance between variables at time step `i` of an ensemble
+solution. This is equivalent to `EnsembleAnalysis.timestep_meancov(sim, i, i)`, but makes
+the intent explicit: only the same-time (diagonal) covariance is computed, avoiding the
+cost of the full cross-time covariance matrix.
+
+Returns `(meanx, meany, C)` where `meanx == meany` are the component-wise means and `C`
+is the component-wise covariance at time step `i`.
+
+See also: [`timeseries_steps_crosscov`](@ref), [`timestep_crosscor`](@ref)
+"""
+function timestep_crosscov(sim, i)
+    return SciMLBase.EnsembleAnalysis.timestep_meancov(sim, i, i)
+end
+
+"""
+    timeseries_steps_crosscov(sim)
+
+Compute the same-time cross-covariance between variables at each time step of an ensemble
+solution. Equivalent to the diagonal (same-time) elements of
+`EnsembleAnalysis.timeseries_steps_meancov(sim)`, but more efficient because only the
+same-time covariances are computed.
+
+Returns a vector of `(meanx, meany, C)` tuples (one per time step), where each tuple
+contains the component-wise means and component-wise covariance at that time step.
+
+See also: [`timestep_crosscov`](@ref), [`timeseries_steps_crosscor`](@ref)
+"""
+function timeseries_steps_crosscov(sim)
+    return [timestep_crosscov(sim, i) for i in 1:length(sim.u[1])]
+end
+
+"""
+    timestep_crosscor(sim, i)
+
+Compute the same-time cross-correlation between variables at time step `i` of an ensemble
+solution. This is equivalent to `EnsembleAnalysis.timestep_meancor(sim, i, i)`, but makes
+the intent explicit: only the same-time (diagonal) correlation is computed, avoiding the
+cost of the full cross-time correlation matrix.
+
+Returns `(meanx, meany, C)` where `meanx == meany` are the component-wise means and `C`
+is the component-wise correlation at time step `i`.
+
+See also: [`timeseries_steps_crosscor`](@ref), [`timestep_crosscov`](@ref)
+"""
+function timestep_crosscor(sim, i)
+    return SciMLBase.EnsembleAnalysis.timestep_meancor(sim, i, i)
+end
+
+"""
+    timeseries_steps_crosscor(sim)
+
+Compute the same-time cross-correlation between variables at each time step of an ensemble
+solution. Equivalent to the diagonal (same-time) elements of
+`EnsembleAnalysis.timeseries_steps_meancor(sim)`, but more efficient because only the
+same-time correlations are computed.
+
+Returns a vector of `(meanx, meany, C)` tuples (one per time step), where each tuple
+contains the component-wise means and component-wise correlation at that time step.
+
+See also: [`timestep_crosscor`](@ref), [`timeseries_steps_crosscov`](@ref)
+"""
+function timeseries_steps_crosscor(sim)
+    return [timestep_crosscor(sim, i) for i in 1:length(sim.u[1])]
+end
+
+"""
     fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple())
 
 Simulate a Luria-Delbrück fluctuation experiment by running `nclone` independent branching
