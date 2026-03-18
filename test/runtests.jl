@@ -271,6 +271,79 @@ end
     end
 end
 
+@testset "crosscov and crosscor utility functions" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+    using RecursiveArrayTools
+
+    u0 = [1]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    affect!(integrator) = (integrator.u[1] += 1)
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+    u0_dist = product_distribution([Dirac(1)])
+
+    results = fluctuation_experiment(bp, u0_dist, 5;
+                                     alg=SSAStepper(),
+                                     ensemble_alg=EnsembleSerial())
+    nsteps = length(results.u[1])
+
+    @testset "timestep_crosscov" begin
+        cov1 = timestep_crosscov(results, 1)
+        # Should return (meanx, meany, C) tuple
+        @test cov1 isa Tuple
+        @test length(cov1) == 3
+        # Result should equal timestep_meancov(sim, i, i)
+        cov1_ref = SciMLBase.EnsembleAnalysis.timestep_meancov(results, 1, 1)
+        @test cov1[1] == cov1_ref[1]
+        @test cov1[2] == cov1_ref[2]
+        @test cov1[3] == cov1_ref[3]
+    end
+
+    @testset "timeseries_steps_crosscov" begin
+        covs = timeseries_steps_crosscov(results)
+        # Should return a vector with one entry per time step
+        @test covs isa Vector
+        @test length(covs) == nsteps
+        # Each element should match the diagonal of timeseries_steps_meancov
+        cov_matrix = SciMLBase.EnsembleAnalysis.timeseries_steps_meancov(results)
+        for i in 1:nsteps
+            @test covs[i][1] == cov_matrix[i, i][1]
+            @test covs[i][3] == cov_matrix[i, i][3]
+        end
+    end
+
+    @testset "timestep_crosscor" begin
+        cor1 = timestep_crosscor(results, 1)
+        # Should return (meanx, meany, C) tuple
+        @test cor1 isa Tuple
+        @test length(cor1) == 3
+        # Result should equal timestep_meancor(sim, i, i)
+        cor1_ref = SciMLBase.EnsembleAnalysis.timestep_meancor(results, 1, 1)
+        @test isequal(cor1[1], cor1_ref[1])
+        @test isequal(cor1[2], cor1_ref[2])
+        @test isequal(cor1[3], cor1_ref[3])
+    end
+
+    @testset "timeseries_steps_crosscor" begin
+        cors = timeseries_steps_crosscor(results)
+        # Should return a vector with one entry per time step
+        @test cors isa Vector
+        @test length(cors) == nsteps
+        # Each element should match the diagonal of timeseries_steps_meancor
+        cor_matrix = SciMLBase.EnsembleAnalysis.timeseries_steps_meancor(results)
+        for i in 1:nsteps
+            @test isequal(cors[i][1], cor_matrix[i, i][1])
+            @test isequal(cors[i][3], cor_matrix[i, i][3])
+        end
+    end
+end
+
 @testset "fluctuation_experiment tests" begin
     using Distributions
     using SciMLBase
