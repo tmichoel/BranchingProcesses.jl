@@ -13,7 +13,7 @@ end
 """
     reduce_tree(tree::BranchingProcessSolution)
 
-Reduce [`BranchingProcessSolution`](@ref) `tree` to an ordinary time series by combining the values of all particles alive at each time point. The timespan of the resulting time series is from the initial time of the root to the latest final time of any of the leaves of the input `tree`; the time points are spaced by `dt` (default: `0.01`). The function `transform` (default: `identity`) is applied to the values of each particle before combining them. The function `reduction` (default: `sum`) is used to combine the (transformed) values of all particles alive at each time point; it can be any callable that accepts a vector of particle values and returns a single aggregated value. For backward compatibility, the strings `"sum"` and `"prod"` are also accepted.
+Reduce [`BranchingProcessSolution`](@ref) `tree` to an ordinary time series by combining the values of all particles alive at each time point. The timespan of the resulting time series is from the initial time of the root to the latest final time of any of the leaves of the input `tree`; the time points are spaced by `dt` (default: `0.01`). The function `transform` (default: `identity`) is applied to the values of each particle before combining them. The function `reduction` (default: `sum`) is used to combine the (transformed) values of all particles alive at each time point. It can be any callable that accepts either a vector of particle values (`reduction(vals)`) or both the current time step and a vector of particle values (`reduction(t, vals)`), and returns a single aggregated value. The two-argument form allows time-dependent rescaling to be applied during reduction. For backward compatibility, the strings `"sum"` and `"prod"` are also accepted.
 
 Note that if the resulting time series has different time points than the original trajectories in the input `tree`, the [interpolating function](https://docs.sciml.ai/DiffEqDocs/stable/basics/solution/#Interpolations-and-Calculating-Derivatives) of the solver used to sample the original trajectories is used to compute the reduced time series. Any keyword arguments `kwargs...` (for instance `idxs=[1,3,5]` to summarize only a subset variables) are passed to the interpolating function. 
 """
@@ -27,7 +27,7 @@ function reduce_tree(sol::BranchingProcessSolution;
     trange = tspan[1]:dt:tspan[2]
 
     # Normalize reduction to a callable for backward compatibility with string arguments
-    reduce_fn = if reduction === "sum"
+    reduce_fn_base = if reduction === "sum"
         sum
     elseif reduction === "prod"
         vals -> reduce((a,b) -> a .* b, vals)
@@ -37,7 +37,23 @@ function reduce_tree(sol::BranchingProcessSolution;
         reduction
     end
 
-    u_dim = length(transform(sol.tree.sol(trange[1]; kwargs...)))
+    # Compute a sample transformed value once for use in dimension detection and arity check.
+    _sample_val = transform(sol.tree.sol(trange[1]; kwargs...))
+    u_dim = length(_sample_val)
+
+    # Detect whether reduce_fn_base accepts (t, vals) or just (vals) using hasmethod.
+    # A time-dependent function has a 2-arg method but no 1-arg method. This correctly
+    # distinguishes user-defined (t, vals) -> ... functions from built-ins like `sum`
+    # which happen to have both 1-arg and 2-arg methods.
+    time_type = typeof(trange[1])
+    vals_vector_type = typeof([_sample_val])
+    use_time_arg = hasmethod(reduce_fn_base, Tuple{time_type, vals_vector_type}) &&
+                   !hasmethod(reduce_fn_base, Tuple{vals_vector_type})
+    reduce_fn = if use_time_arg
+        (t, vals) -> reduce_fn_base(t, vals)
+    else
+        (t, vals) -> reduce_fn_base(vals)
+    end
 
     # Collect active node values at each time point and apply the reduction function
     u = map(trange) do t
@@ -47,7 +63,7 @@ function reduce_tree(sol::BranchingProcessSolution;
         if isempty(vals)
             zeros(u_dim)
         else
-            v = reduce_fn(vals)
+            v = reduce_fn(t, vals)
             isa(v, AbstractVector) ? v : [v]
         end
     end
@@ -59,6 +75,44 @@ function reduce_tree(sol::BranchingProcessSolution;
                                          transform=transform,
                                          reduction=reduction,
                                          original_solution=store_original ? sol : nothing)
+end
+
+"""
+    rescale(sol::ReducedBranchingProcessSolution, f)
+
+Rescale the solution values of a [`ReducedBranchingProcessSolution`](@ref) elementwise
+by a function `f` of the corresponding time step values. Returns a new
+`ReducedBranchingProcessSolution` with values `f(t) .* u` at each time point `t`.
+
+The scaling function `f` should accept a single time value and return either a scalar
+or a vector compatible with the solution values `u`. This is useful, for example, to
+normalize the particle sum by the expected number of particles in order to study
+fluctuations around the mean field.
+
+## Examples
+
+```julia
+# Normalize by the expected number of particles exp(lambda*t) to study fluctuations
+lambda = 1.0
+rescaled = rescale(sol, t -> exp(-lambda * t))
+```
+
+See also: [`reduce_tree`](@ref), [`ReducedBranchingProcessSolution`](@ref)
+"""
+function rescale(sol::ReducedBranchingProcessSolution, f)
+    u_new = [f(t) .* u for (t, u) in zip(sol.t, sol.u)]
+    return ReducedBranchingProcessSolution(u_new, sol.t;
+                                           prob=sol.prob,
+                                           alg=sol.alg,
+                                           dense=sol.dense,
+                                           interp=sol.interp,
+                                           tslocation=sol.tslocation,
+                                           retcode=sol.retcode,
+                                           transform=sol.transform,
+                                           reduction=sol.reduction,
+                                           original_solution=sol.original_solution,
+                                           p=sol.p,
+                                           sys=sol.sys)
 end
 
 
