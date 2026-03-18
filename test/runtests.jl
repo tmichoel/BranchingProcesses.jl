@@ -418,3 +418,108 @@ end
         end
     end
 end
+
+@testset "rescale utility function" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+
+    u0 = [1]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    affect!(integrator) = (integrator.u[1] += 1)
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+    u0_dist = product_distribution([Dirac(1)])
+
+    results = fluctuation_experiment(bp, u0_dist, 3;
+                                     alg=SSAStepper(),
+                                     ensemble_alg=EnsembleSerial())
+    sol = results.u[1]
+
+    lambda = 1.0
+
+    @testset "rescale returns a ReducedBranchingProcessSolution" begin
+        rescaled = rescale(sol, t -> exp(-lambda * t))
+        @test rescaled isa ReducedBranchingProcessSolution
+    end
+
+    @testset "rescale preserves time points" begin
+        rescaled = rescale(sol, t -> exp(-lambda * t))
+        @test rescaled.t == sol.t
+    end
+
+    @testset "rescale applies scaling correctly" begin
+        rescaled = rescale(sol, t -> exp(-lambda * t))
+        for (t, u, u_new) in zip(sol.t, sol.u, rescaled.u)
+            @test u_new ≈ exp(-lambda * t) .* u
+        end
+    end
+
+    @testset "rescale with scalar scaling factor 1 is identity" begin
+        rescaled = rescale(sol, t -> 1.0)
+        for (u, u_new) in zip(sol.u, rescaled.u)
+            @test u_new ≈ u
+        end
+    end
+
+    @testset "rescale preserves other fields" begin
+        rescaled = rescale(sol, t -> exp(-lambda * t))
+        @test rescaled.prob === sol.prob
+        @test rescaled.reduction === sol.reduction
+        @test rescaled.transform === sol.transform
+    end
+end
+
+@testset "time-dependent reduction in reduce_tree" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+
+    u0 = [1]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    affect!(integrator) = (integrator.u[1] += 1)
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+
+    bp_sol = solve(bp, SSAStepper())
+
+    lambda = 1.0
+
+    @testset "time-dependent reduction returns ReducedBranchingProcessSolution" begin
+        scaling_reduction = (t, vals) -> exp(-lambda * t) .* sum(vals)
+        sol_scaled = reduce_tree(bp_sol; reduction=scaling_reduction)
+        @test sol_scaled isa ReducedBranchingProcessSolution
+    end
+
+    @testset "time-dependent reduction equals rescale of plain sum" begin
+        dt = 0.1
+        scaling_reduction = (t, vals) -> exp(-lambda * t) .* sum(vals)
+        sol_scaled = reduce_tree(bp_sol; reduction=scaling_reduction, dt=dt)
+        sol_plain = reduce_tree(bp_sol; reduction=sum, dt=dt)
+
+        # Both approaches should yield the same rescaled values
+        rescaled = rescale(sol_plain, t -> exp(-lambda * t))
+        for (u1, u2) in zip(sol_scaled.u, rescaled.u)
+            @test u1 ≈ u2
+        end
+    end
+
+    @testset "one-arg reduction still works (backward compatibility)" begin
+        sol_sum = reduce_tree(bp_sol; reduction=sum)
+        @test sol_sum isa ReducedBranchingProcessSolution
+        @test all(v[1] >= 0 for v in sol_sum.u)
+    end
+
+    @testset "string reductions still work (backward compatibility)" begin
+        sol_str = reduce_tree(bp_sol; reduction="sum")
+        @test sol_str isa ReducedBranchingProcessSolution
+    end
+end
