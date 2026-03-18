@@ -92,9 +92,9 @@ fluctuations around the mean field.
 ## Examples
 
 ```julia
-# Normalize by the expected number of particles exp(lambda*t) to study fluctuations
+# Normalize by the square root of the expected number of particles exp(lambda*t) to study fluctuations
 lambda = 1.0
-rescaled = rescale(sol, t -> exp(-lambda * t))
+rescaled = rescale(sol, t -> exp(-0.5 * lambda * t))
 ```
 
 See also: [`reduce_tree`](@ref), [`ReducedBranchingProcessSolution`](@ref)
