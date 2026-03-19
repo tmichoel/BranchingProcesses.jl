@@ -205,7 +205,7 @@ See also: [`timeseries_steps_crosscor`](@ref), [`timestep_crosscov`](@ref)
 """
 function timestep_crosscor(sim, i)
     c_vec = timestep_crosscov(sim, i)
-    d = round(Int, sqrt(length(c_vec)))
+    d = isqrt(length(c_vec))
     C = reshape(c_vec, d, d)
     # Compute standard deviations from the diagonal of the covariance matrix
     stds = sqrt.(diag(C))
