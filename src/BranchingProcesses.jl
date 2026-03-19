@@ -16,9 +16,11 @@ using AbstractTrees
 using ColorSchemes
 using Distributions
 using DocStringExtensions
+using LinearAlgebra
 using RecipesBase
 using RecursiveArrayTools
 using SciMLBase
+using Statistics
 
 
 # include files

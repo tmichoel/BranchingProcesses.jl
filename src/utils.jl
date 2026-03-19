@@ -152,30 +152,38 @@ end
 """
     timestep_crosscov(sim, i)
 
-Compute the same-time cross-covariance between variables at time step `i` of an ensemble
-solution. This is equivalent to `EnsembleAnalysis.timestep_meancov(sim, i, i)`, but makes
-the intent explicit: only the same-time (diagonal) covariance is computed, avoiding the
-cost of the full cross-time covariance matrix.
+Compute the cross-covariance matrix between variables at time step `i` of an ensemble
+solution. Given `N` ensemble members each with a `d`-dimensional state vector, this
+function returns the `d×d` sample covariance matrix whose `(j,k)` entry is the sample
+covariance between variable `j` and variable `k` across all trajectories at time step `i`.
 
-Returns `(meanx, meany, C)` where `meanx == meany` are the component-wise means and `C`
-is the component-wise covariance at time step `i`.
+Returns `(mean_x, C)` where `mean_x` is the `d`-dimensional sample mean vector and `C`
+is the `d×d` cross-variable covariance matrix at time step `i`.
 
 See also: [`timeseries_steps_crosscov`](@ref), [`timestep_crosscor`](@ref)
 """
 function timestep_crosscov(sim, i)
-    return SciMLBase.EnsembleAnalysis.timestep_meancov(sim, i, i)
+    N = length(sim.u)
+    # Collect state vectors at time step i from each ensemble member
+    data = [sim.u[n].u[i] for n in 1:N]
+    # Stack into a (d × N) matrix: each column is one observation
+    X = reduce(hcat, data)
+    # Sample mean (d-dimensional vector)
+    mean_x = vec(mean(X, dims=2))
+    # Sample covariance matrix (d × d), treating columns as observations
+    C = cov(X, dims=2)
+    return (mean_x, C)
 end
 
 """
     timeseries_steps_crosscov(sim)
 
-Compute the same-time cross-covariance between variables at each time step of an ensemble
-solution. Equivalent to the diagonal (same-time) elements of
-`EnsembleAnalysis.timeseries_steps_meancov(sim)`, but more efficient because only the
-same-time covariances are computed.
+Compute the cross-covariance matrix between variables at each time step of an ensemble
+solution. For each time step `i`, returns the `d×d` sample covariance matrix whose `(j,k)`
+entry is the sample covariance between variable `j` and variable `k` across all trajectories.
 
-Returns a vector of `(meanx, meany, C)` tuples (one per time step), where each tuple
-contains the component-wise means and component-wise covariance at that time step.
+Returns a vector of `(mean_x, C)` tuples (one per time step), where `mean_x` is the
+`d`-dimensional sample mean vector and `C` is the `d×d` cross-variable covariance matrix.
 
 See also: [`timestep_crosscov`](@ref), [`timeseries_steps_crosscor`](@ref)
 """
@@ -186,30 +194,36 @@ end
 """
     timestep_crosscor(sim, i)
 
-Compute the same-time cross-correlation between variables at time step `i` of an ensemble
-solution. This is equivalent to `EnsembleAnalysis.timestep_meancor(sim, i, i)`, but makes
-the intent explicit: only the same-time (diagonal) correlation is computed, avoiding the
-cost of the full cross-time correlation matrix.
+Compute the cross-correlation matrix between variables at time step `i` of an ensemble
+solution. Given `N` ensemble members each with a `d`-dimensional state vector, this
+function returns the `d×d` sample correlation matrix whose `(j,k)` entry is the sample
+correlation between variable `j` and variable `k` across all trajectories at time step `i`.
 
-Returns `(meanx, meany, C)` where `meanx == meany` are the component-wise means and `C`
-is the component-wise correlation at time step `i`.
+Returns `(mean_x, R)` where `mean_x` is the `d`-dimensional sample mean vector and `R`
+is the `d×d` cross-variable correlation matrix at time step `i`. Entries where a variable
+has zero variance are set to `NaN`.
 
 See also: [`timeseries_steps_crosscor`](@ref), [`timestep_crosscov`](@ref)
 """
 function timestep_crosscor(sim, i)
-    return SciMLBase.EnsembleAnalysis.timestep_meancor(sim, i, i)
+    mean_x, C = timestep_crosscov(sim, i)
+    # Compute standard deviations from the diagonal of the covariance matrix
+    stds = sqrt.(diag(C))
+    # Normalise: R[j,k] = C[j,k] / (std_j * std_k); zero-variance entries yield NaN
+    R = C ./ (stds * stds')
+    return (mean_x, R)
 end
 
 """
     timeseries_steps_crosscor(sim)
 
-Compute the same-time cross-correlation between variables at each time step of an ensemble
-solution. Equivalent to the diagonal (same-time) elements of
-`EnsembleAnalysis.timeseries_steps_meancor(sim)`, but more efficient because only the
-same-time correlations are computed.
+Compute the cross-correlation matrix between variables at each time step of an ensemble
+solution. For each time step `i`, returns the `d×d` sample correlation matrix whose `(j,k)`
+entry is the sample correlation between variable `j` and variable `k` across all trajectories.
 
-Returns a vector of `(meanx, meany, C)` tuples (one per time step), where each tuple
-contains the component-wise means and component-wise correlation at that time step.
+Returns a vector of `(mean_x, R)` tuples (one per time step), where `mean_x` is the
+`d`-dimensional sample mean vector and `R` is the `d×d` cross-variable correlation matrix.
+Entries where a variable has zero variance are set to `NaN`.
 
 See also: [`timestep_crosscor`](@ref), [`timeseries_steps_crosscov`](@ref)
 """
