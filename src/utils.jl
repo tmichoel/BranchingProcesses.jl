@@ -157,8 +157,7 @@ solution. Given `N` ensemble members each with a `d`-dimensional state vector, t
 function returns the `d×d` sample covariance matrix whose `(j,k)` entry is the sample
 covariance between variable `j` and variable `k` across all trajectories at time step `i`.
 
-Returns `(mean_x, C)` where `mean_x` is the `d`-dimensional sample mean vector and `C`
-is the `d×d` cross-variable covariance matrix at time step `i`.
+Returns the covariance matrix as a vector of length `d²` (using `C[:]`).
 
 See also: [`timeseries_steps_crosscov`](@ref), [`timestep_crosscor`](@ref)
 """
@@ -168,11 +167,9 @@ function timestep_crosscov(sim, i)
     data = [sim.u[n].u[i] for n in 1:N]
     # Stack into a (d × N) matrix: each column is one observation
     X = reduce(hcat, data)
-    # Sample mean (d-dimensional vector)
-    mean_x = vec(mean(X, dims=2))
     # Sample covariance matrix (d × d), treating columns as observations
     C = cov(X, dims=2)
-    return (mean_x, C)
+    return C[:]
 end
 
 """
@@ -182,13 +179,15 @@ Compute the cross-covariance matrix between variables at each time step of an en
 solution. For each time step `i`, returns the `d×d` sample covariance matrix whose `(j,k)`
 entry is the sample covariance between variable `j` and variable `k` across all trajectories.
 
-Returns a vector of `(mean_x, C)` tuples (one per time step), where `mean_x` is the
-`d`-dimensional sample mean vector and `C` is the `d×d` cross-variable covariance matrix.
+Returns a `DiffEqArray` containing the covariance vectors (each of length `d²`) at each
+time step, together with the corresponding time values.
 
 See also: [`timestep_crosscov`](@ref), [`timeseries_steps_crosscor`](@ref)
 """
 function timeseries_steps_crosscov(sim)
-    return [timestep_crosscov(sim, i) for i in 1:length(sim.u[1])]
+    covs = [timestep_crosscov(sim, i) for i in 1:length(sim.u[1])]
+    t = sim.u[1].t
+    return DiffEqArray(covs, t)
 end
 
 """
@@ -199,19 +198,20 @@ solution. Given `N` ensemble members each with a `d`-dimensional state vector, t
 function returns the `d×d` sample correlation matrix whose `(j,k)` entry is the sample
 correlation between variable `j` and variable `k` across all trajectories at time step `i`.
 
-Returns `(mean_x, R)` where `mean_x` is the `d`-dimensional sample mean vector and `R`
-is the `d×d` cross-variable correlation matrix at time step `i`. Entries where a variable
-has zero variance are set to `NaN`.
+Returns the correlation matrix as a vector of length `d²` (using `R[:]`). Entries where a
+variable has zero variance are set to `NaN`.
 
 See also: [`timeseries_steps_crosscor`](@ref), [`timestep_crosscov`](@ref)
 """
 function timestep_crosscor(sim, i)
-    mean_x, C = timestep_crosscov(sim, i)
+    c_vec = timestep_crosscov(sim, i)
+    d = round(Int, sqrt(length(c_vec)))
+    C = reshape(c_vec, d, d)
     # Compute standard deviations from the diagonal of the covariance matrix
     stds = sqrt.(diag(C))
     # Normalise: R[j,k] = C[j,k] / (std_j * std_k); zero-variance entries yield NaN
     R = C ./ (stds * stds')
-    return (mean_x, R)
+    return R[:]
 end
 
 """
@@ -221,14 +221,16 @@ Compute the cross-correlation matrix between variables at each time step of an e
 solution. For each time step `i`, returns the `d×d` sample correlation matrix whose `(j,k)`
 entry is the sample correlation between variable `j` and variable `k` across all trajectories.
 
-Returns a vector of `(mean_x, R)` tuples (one per time step), where `mean_x` is the
-`d`-dimensional sample mean vector and `R` is the `d×d` cross-variable correlation matrix.
-Entries where a variable has zero variance are set to `NaN`.
+Returns a `DiffEqArray` containing the correlation vectors (each of length `d²`) at each
+time step, together with the corresponding time values. Entries where a variable has zero
+variance are set to `NaN`.
 
 See also: [`timestep_crosscor`](@ref), [`timeseries_steps_crosscov`](@ref)
 """
 function timeseries_steps_crosscor(sim)
-    return [timestep_crosscor(sim, i) for i in 1:length(sim.u[1])]
+    cors = [timestep_crosscor(sim, i) for i in 1:length(sim.u[1])]
+    t = sim.u[1].t
+    return DiffEqArray(cors, t)
 end
 
 """

@@ -299,19 +299,12 @@ end
 
     @testset "timestep_crosscov return format" begin
         cov1 = timestep_crosscov(results, 1)
-        # Should return a 2-tuple (mean_x, C)
-        @test cov1 isa Tuple
-        @test length(cov1) == 2
-        mean_x, C = cov1
-        # mean_x is a d-dimensional vector
-        @test mean_x isa AbstractVector
-        @test length(mean_x) == d
-        # C is a d×d covariance matrix
-        @test C isa AbstractMatrix
-        @test size(C) == (d, d)
-        # Covariance matrix is symmetric
+        # Should return a vector of floats (flattened d×d covariance matrix)
+        @test cov1 isa AbstractVector
+        @test length(cov1) == d^2
+        # Reshape to matrix to check symmetry and non-negative diagonal
+        C = reshape(cov1, d, d)
         @test C ≈ C'
-        # Diagonal entries (variances) are non-negative
         @test all(diag(C) .>= 0)
     end
 
@@ -320,41 +313,32 @@ end
         N = length(results.u)
         data = [results.u[n].u[i] for n in 1:N]
         X = reduce(hcat, data)
-        expected_mean = vec(mean(X, dims=2))
         expected_C = cov(X, dims=2)
-        mean_x, C = timestep_crosscov(results, i)
-        @test mean_x ≈ expected_mean
-        @test C ≈ expected_C
+        c_vec = timestep_crosscov(results, i)
+        @test c_vec ≈ expected_C[:]
     end
 
     @testset "timeseries_steps_crosscov" begin
         covs = timeseries_steps_crosscov(results)
-        # Should return a vector with one entry per time step
-        @test covs isa Vector
+        # Should return a DiffEqArray with one entry per time step
+        @test covs isa RecursiveArrayTools.AbstractDiffEqArray
         @test length(covs) == nsteps
-        # Each element is a 2-tuple (mean_x, C)
-        for (mean_x, C) in covs
-            @test mean_x isa AbstractVector
-            @test length(mean_x) == d
-            @test C isa AbstractMatrix
-            @test size(C) == (d, d)
+        # Each element is a vector of length d²
+        for c_vec in covs
+            @test c_vec isa AbstractVector
+            @test length(c_vec) == d^2
+            C = reshape(c_vec, d, d)
             @test all(diag(C) .>= 0)
         end
     end
 
     @testset "timestep_crosscor return format" begin
         cor1 = timestep_crosscor(results, 1)
-        # Should return a 2-tuple (mean_x, R)
-        @test cor1 isa Tuple
-        @test length(cor1) == 2
-        mean_x, R = cor1
-        # mean_x is a d-dimensional vector
-        @test mean_x isa AbstractVector
-        @test length(mean_x) == d
-        # R is a d×d correlation matrix
-        @test R isa AbstractMatrix
-        @test size(R) == (d, d)
-        # Diagonal entries are 1 (or NaN if variance is 0)
+        # Should return a vector of floats (flattened d×d correlation matrix)
+        @test cor1 isa AbstractVector
+        @test length(cor1) == d^2
+        # Reshape to matrix to check diagonal entries are 1 (or NaN if variance is 0)
+        R = reshape(cor1, d, d)
         for j in 1:d
             if !isnan(R[j,j])
                 @test R[j,j] ≈ 1.0
@@ -364,29 +348,26 @@ end
 
     @testset "timestep_crosscor consistent with timestep_crosscov" begin
         i = 2
-        mean_x_cov, C = timestep_crosscov(results, i)
-        mean_x_cor, R = timestep_crosscor(results, i)
-        # Means must be identical
-        @test mean_x_cov ≈ mean_x_cor
+        c_vec = timestep_crosscov(results, i)
+        C = reshape(c_vec, d, d)
+        r_vec = timestep_crosscor(results, i)
         # R[j,k] = C[j,k] / sqrt(C[j,j] * C[k,k])
         stds = sqrt.(diag(C))
         expected_R = C ./ (stds * stds')
         # isequal treats NaN == NaN, which is correct: both compute the same formula
         # so NaN entries (from zero-variance variables) appear at identical positions
-        @test isequal(R, expected_R)
+        @test isequal(r_vec, expected_R[:])
     end
 
     @testset "timeseries_steps_crosscor" begin
         cors = timeseries_steps_crosscor(results)
-        # Should return a vector with one entry per time step
-        @test cors isa Vector
+        # Should return a DiffEqArray with one entry per time step
+        @test cors isa RecursiveArrayTools.AbstractDiffEqArray
         @test length(cors) == nsteps
-        # Each element is a 2-tuple (mean_x, R)
-        for (mean_x, R) in cors
-            @test mean_x isa AbstractVector
-            @test length(mean_x) == d
-            @test R isa AbstractMatrix
-            @test size(R) == (d, d)
+        # Each element is a vector of length d²
+        for r_vec in cors
+            @test r_vec isa AbstractVector
+            @test length(r_vec) == d^2
         end
     end
 end
