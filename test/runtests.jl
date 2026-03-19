@@ -276,6 +276,8 @@ end
     using SciMLBase
     using JumpProcesses
     using RecursiveArrayTools
+    using Statistics
+    using LinearAlgebra
 
     u0 = [1]
     tspan = (0.0, 3.0)
@@ -288,21 +290,41 @@ end
     bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
     u0_dist = product_distribution([Dirac(1)])
 
-    results = fluctuation_experiment(bp, u0_dist, 5;
+    # Use 10 trajectories to have enough samples for a non-degenerate covariance estimate
+    results = fluctuation_experiment(bp, u0_dist, 10;
                                      alg=SSAStepper(),
                                      ensemble_alg=EnsembleSerial())
     nsteps = length(results.u[1])
+    d = length(results.u[1].u[1])  # state dimension (1 for this problem)
 
-    @testset "timestep_crosscov" begin
+    @testset "timestep_crosscov return format" begin
         cov1 = timestep_crosscov(results, 1)
-        # Should return (meanx, meany, C) tuple
+        # Should return a 2-tuple (mean_x, C)
         @test cov1 isa Tuple
-        @test length(cov1) == 3
-        # Result should equal timestep_meancov(sim, i, i)
-        cov1_ref = SciMLBase.EnsembleAnalysis.timestep_meancov(results, 1, 1)
-        @test cov1[1] == cov1_ref[1]
-        @test cov1[2] == cov1_ref[2]
-        @test cov1[3] == cov1_ref[3]
+        @test length(cov1) == 2
+        mean_x, C = cov1
+        # mean_x is a d-dimensional vector
+        @test mean_x isa AbstractVector
+        @test length(mean_x) == d
+        # C is a d×d covariance matrix
+        @test C isa AbstractMatrix
+        @test size(C) == (d, d)
+        # Covariance matrix is symmetric
+        @test C ≈ C'
+        # Diagonal entries (variances) are non-negative
+        @test all(diag(C) .>= 0)
+    end
+
+    @testset "timestep_crosscov matches manual computation" begin
+        i = 1
+        N = length(results.u)
+        data = [results.u[n].u[i] for n in 1:N]
+        X = reduce(hcat, data)
+        expected_mean = vec(mean(X, dims=2))
+        expected_C = cov(X, dims=2)
+        mean_x, C = timestep_crosscov(results, i)
+        @test mean_x ≈ expected_mean
+        @test C ≈ expected_C
     end
 
     @testset "timeseries_steps_crosscov" begin
@@ -310,24 +332,48 @@ end
         # Should return a vector with one entry per time step
         @test covs isa Vector
         @test length(covs) == nsteps
-        # Each element should match the diagonal of timeseries_steps_meancov
-        cov_matrix = SciMLBase.EnsembleAnalysis.timeseries_steps_meancov(results)
-        for i in 1:nsteps
-            @test covs[i][1] == cov_matrix[i, i][1]
-            @test covs[i][3] == cov_matrix[i, i][3]
+        # Each element is a 2-tuple (mean_x, C)
+        for (mean_x, C) in covs
+            @test mean_x isa AbstractVector
+            @test length(mean_x) == d
+            @test C isa AbstractMatrix
+            @test size(C) == (d, d)
+            @test all(diag(C) .>= 0)
         end
     end
 
-    @testset "timestep_crosscor" begin
+    @testset "timestep_crosscor return format" begin
         cor1 = timestep_crosscor(results, 1)
-        # Should return (meanx, meany, C) tuple
+        # Should return a 2-tuple (mean_x, R)
         @test cor1 isa Tuple
-        @test length(cor1) == 3
-        # Result should equal timestep_meancor(sim, i, i)
-        cor1_ref = SciMLBase.EnsembleAnalysis.timestep_meancor(results, 1, 1)
-        @test isequal(cor1[1], cor1_ref[1])
-        @test isequal(cor1[2], cor1_ref[2])
-        @test isequal(cor1[3], cor1_ref[3])
+        @test length(cor1) == 2
+        mean_x, R = cor1
+        # mean_x is a d-dimensional vector
+        @test mean_x isa AbstractVector
+        @test length(mean_x) == d
+        # R is a d×d correlation matrix
+        @test R isa AbstractMatrix
+        @test size(R) == (d, d)
+        # Diagonal entries are 1 (or NaN if variance is 0)
+        for j in 1:d
+            if !isnan(R[j,j])
+                @test R[j,j] ≈ 1.0
+            end
+        end
+    end
+
+    @testset "timestep_crosscor consistent with timestep_crosscov" begin
+        i = 2
+        mean_x_cov, C = timestep_crosscov(results, i)
+        mean_x_cor, R = timestep_crosscor(results, i)
+        # Means must be identical
+        @test mean_x_cov ≈ mean_x_cor
+        # R[j,k] = C[j,k] / sqrt(C[j,j] * C[k,k])
+        stds = sqrt.(diag(C))
+        expected_R = C ./ (stds * stds')
+        # isequal treats NaN == NaN, which is correct: both compute the same formula
+        # so NaN entries (from zero-variance variables) appear at identical positions
+        @test isequal(R, expected_R)
     end
 
     @testset "timeseries_steps_crosscor" begin
@@ -335,11 +381,12 @@ end
         # Should return a vector with one entry per time step
         @test cors isa Vector
         @test length(cors) == nsteps
-        # Each element should match the diagonal of timeseries_steps_meancor
-        cor_matrix = SciMLBase.EnsembleAnalysis.timeseries_steps_meancor(results)
-        for i in 1:nsteps
-            @test isequal(cors[i][1], cor_matrix[i, i][1])
-            @test isequal(cors[i][3], cor_matrix[i, i][3])
+        # Each element is a 2-tuple (mean_x, R)
+        for (mean_x, R) in cors
+            @test mean_x isa AbstractVector
+            @test length(mean_x) == d
+            @test R isa AbstractMatrix
+            @test size(R) == (d, d)
         end
     end
 end
