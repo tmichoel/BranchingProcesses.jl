@@ -578,48 +578,48 @@ end
     end
 
     @testset "time grid is correct" begin
-        dt = 0.1
-        sol = solve_and_reduce(bp, SSAStepper(); dt=dt)
+        output_dt = 0.1
+        sol = solve_and_reduce(bp, SSAStepper(); output_dt=output_dt)
         @test sol.t[1] ≈ tspan[1]
         @test sol.t[end] ≈ tspan[2]
-        @test length(sol.t) == length(collect(tspan[1]:dt:tspan[2]))
+        @test length(sol.t) == length(collect(tspan[1]:output_dt:tspan[2]))
     end
 
     @testset "time grid correct via solve dispatch" begin
-        dt = 0.1
-        sol = solve(bp, SSAStepper(); reduction=sum, dt=dt)
+        output_dt = 0.1
+        sol = solve(bp, SSAStepper(); reduction=sum, output_dt=output_dt)
         @test sol.t[1] ≈ tspan[1]
         @test sol.t[end] ≈ tspan[2]
-        @test length(sol.t) == length(collect(tspan[1]:dt:tspan[2]))
+        @test length(sol.t) == length(collect(tspan[1]:output_dt:tspan[2]))
     end
 
     @testset "all reduced values are finite and non-negative (sum)" begin
-        sol = solve_and_reduce(bp, SSAStepper(); reduction=sum, dt=0.1)
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=sum, output_dt=0.1)
         @test all(isfinite(v[1]) for v in sol.u)
         @test all(v[1] >= 0 for v in sol.u)
     end
 
     @testset "all reduced values are finite and non-negative (prod)" begin
-        sol = solve_and_reduce(bp, SSAStepper(); reduction=prod, dt=0.1)
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=prod, output_dt=0.1)
         @test all(isfinite(v[1]) for v in sol.u)
         @test all(v[1] >= 0 for v in sol.u)
     end
 
     @testset "all reduced values are finite (maximum)" begin
-        sol = solve_and_reduce(bp, SSAStepper(); reduction=maximum, dt=0.1)
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=maximum, output_dt=0.1)
         @test all(isfinite(v[1]) for v in sol.u)
     end
 
     @testset "all reduced values are finite (minimum)" begin
-        sol = solve_and_reduce(bp, SSAStepper(); reduction=minimum, dt=0.1)
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=minimum, output_dt=0.1)
         @test all(isfinite(v[1]) for v in sol.u)
     end
 
     @testset "string reductions work" begin
-        sol_sum  = solve_and_reduce(bp, SSAStepper(); reduction="sum",  dt=0.1)
-        sol_prod = solve_and_reduce(bp, SSAStepper(); reduction="prod",  dt=0.1)
-        sol_max  = solve_and_reduce(bp, SSAStepper(); reduction="max",  dt=0.1)
-        sol_min  = solve_and_reduce(bp, SSAStepper(); reduction="min",  dt=0.1)
+        sol_sum  = solve_and_reduce(bp, SSAStepper(); reduction="sum",  output_dt=0.1)
+        sol_prod = solve_and_reduce(bp, SSAStepper(); reduction="prod",  output_dt=0.1)
+        sol_max  = solve_and_reduce(bp, SSAStepper(); reduction="max",  output_dt=0.1)
+        sol_min  = solve_and_reduce(bp, SSAStepper(); reduction="min",  output_dt=0.1)
         @test sol_sum  isa ReducedBranchingProcessSolution
         @test sol_prod isa ReducedBranchingProcessSolution
         @test sol_max  isa ReducedBranchingProcessSolution
@@ -627,7 +627,7 @@ end
     end
 
     @testset "reduction metadata stored correctly" begin
-        sol = solve_and_reduce(bp, SSAStepper(); reduction=sum, dt=0.1)
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=sum, output_dt=0.1)
         @test sol.reduction === sum
         @test sol.transform === identity
         @test sol.prob === bp
@@ -636,8 +636,8 @@ end
     @testset "transform is applied" begin
         # At t=0 there is always exactly one particle alive with its initial value u0=[1].
         # So the sum with identity gives [1] and with transform=x->2x gives [2].
-        sol_plain  = solve_and_reduce(bp, SSAStepper(); reduction=sum, dt=0.1)
-        sol_scaled = solve_and_reduce(bp, SSAStepper(); reduction=sum, transform=x -> 2 .* x, dt=0.1)
+        sol_plain  = solve_and_reduce(bp, SSAStepper(); reduction=sum, output_dt=0.1)
+        sol_scaled = solve_and_reduce(bp, SSAStepper(); reduction=sum, transform=x -> 2 .* x, output_dt=0.1)
         # Both runs may differ after t=0 (different random trees), but at t=0 the
         # first element is deterministic: 1 particle at u0=[1].
         @test sol_plain.u[1]  == [1]
@@ -661,7 +661,7 @@ end
         disc_prob_det = DiscreteProblem(u0, tspan, p_zero)
         jump_prob_det = JumpProblem(disc_prob_det, Direct(), jump)
         bp_det = ConstantRateBranchingProblem(jump_prob_det, Dirac(1.0), 2)
-        sol_det = solve_and_reduce(bp_det, SSAStepper(); reduction=sum, dt=0.5)
+        sol_det = solve_and_reduce(bp_det, SSAStepper(); reduction=sum, output_dt=0.5)
         @test sol_det isa ReducedBranchingProcessSolution
         # There is always at least one particle alive, so the sum must be positive.
         @test all(v[1] > 0 for v in sol_det.u)

@@ -3,7 +3,7 @@
 
 Solve a branching stochastic process with constant branching rate defined by the `ConstantRateBranchingProblem` `bp`. The positional argument `alg` and optional keyword arguments `kwargs...` are passed to the solver used to sample trajectories of the underlying SDE problem.
 
-When the keyword argument `reduction` is provided (e.g. `reduction=sum`), the on-the-fly solver [`solve_and_reduce`](@ref) is used instead of [`solve_and_split`](@ref), and a [`ReducedBranchingProcessSolution`](@ref) is returned directly without storing any [`BranchingProcessNode`](@ref)s. The keyword arguments `transform` (default: `identity`) and `dt` (default: `0.01`) control the transform applied to particle values and the time-grid spacing of the reduced solution, respectively. Any remaining keyword arguments are passed to the underlying SDE/jump process solver. See [`solve_and_reduce`](@ref) for details on supported reduction functions.
+When the keyword argument `reduction` is provided (e.g. `reduction=sum`), the on-the-fly solver [`solve_and_reduce`](@ref) is used instead of [`solve_and_split`](@ref), and a [`ReducedBranchingProcessSolution`](@ref) is returned directly without storing any [`BranchingProcessNode`](@ref)s. The keyword arguments `transform` (default: `identity`) and `output_dt` (default: `0.01`) control the transform applied to particle values and the time-grid spacing of the reduced solution, respectively. Any remaining keyword arguments (including `dt`) are passed to the underlying SDE/jump process solver. See [`solve_and_reduce`](@ref) for details on supported reduction functions.
 
 When `reduction` is not provided (the default), returns a [`BranchingProcessSolution`](@ref) containing the problem definition and the resulting tree structure.
 
@@ -253,7 +253,7 @@ function _solve_reduce!(acc::OnTheFlyReducedSolution,
 end
 
 """
-    solve_and_reduce(bp::ConstantRateBranchingProblem, alg=nothing; reduction=sum, transform=identity, dt=0.01, kwargs...)
+    solve_and_reduce(bp::ConstantRateBranchingProblem, alg=nothing; reduction=sum, transform=identity, output_dt=0.01, kwargs...)
 
 Recursively solve a branching process and construct a reduced time series on the fly,
 without storing any [`BranchingProcessNode`](@ref)s.
@@ -286,15 +286,9 @@ This approach works for reductions that form a monoid under element-wise applica
   `"min"`.  Default: `sum`.
 - `transform`: A function applied to each particle's values before they are combined.
   Default: `identity`.
-- `dt`: Spacing of the output time grid.  Default: `0.01`.
-- Additional keyword arguments are passed to the underlying SDE/jump process solver
-  (e.g. `saveat`, `reltol`, `abstol`).
-
-!!! note "dt vs solver time step"
-    When `solve_and_reduce` is invoked via `solve(bp, alg; reduction=..., dt=...)`,
-    the `dt` keyword controls the output time-grid spacing of the reduced solution, not
-    the internal time step of the SDE/jump process solver.  To control the solver time
-    step, use solver-specific keywords such as `saveat`, `dtmax`, or `adaptive=false`.
+- `output_dt`: Spacing of the output time grid for the reduced solution.  Default: `0.01`.
+- Additional keyword arguments (e.g. `dt`, `saveat`, `reltol`, `abstol`) are passed to
+  the underlying SDE/jump process solver.
 
 ## Returns
 
@@ -312,11 +306,11 @@ bp = ConstantRateBranchingProblem(prob, 1.0, 2)
 
 # Via solve (convenient wrapper)
 sol = solve(bp; reduction=sum)
-sol = solve(bp; reduction=sum, dt=0.05, transform=log)
+sol = solve(bp; reduction=sum, output_dt=0.05, transform=log)
 
 # Directly
-sol = solve_and_reduce(bp; reduction=sum, dt=0.05)
-sol = solve_and_reduce(bp; reduction=maximum, dt=0.1)
+sol = solve_and_reduce(bp; reduction=sum, output_dt=0.05)
+sol = solve_and_reduce(bp; reduction=maximum, output_dt=0.1)
 ```
 
 See also: [`reduce_tree`](@ref), [`solve_and_split`](@ref), [`ConstantRateBranchingProblem`](@ref)
@@ -324,10 +318,10 @@ See also: [`reduce_tree`](@ref), [`solve_and_split`](@ref), [`ConstantRateBranch
 function solve_and_reduce(bp::ConstantRateBranchingProblem, alg=nothing;
                            reduction=sum,
                            transform=identity,
-                           dt=0.01,
+                           output_dt=0.01,
                            kwargs...)
     tspan  = get_timespan(bp.prob)
-    trange = tspan[1]:dt:tspan[2]
+    trange = tspan[1]:output_dt:tspan[2]
     n      = length(trange)
 
     combine, neutral_fn = _reduction_ops(reduction)
