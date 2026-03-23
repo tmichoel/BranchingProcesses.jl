@@ -89,6 +89,9 @@ or a vector compatible with the solution values `u`. This is useful, for example
 normalize the particle sum by the expected number of particles in order to study
 fluctuations around the mean field.
 
+The `transform` field of the returned solution is set to `f ∘ sol.transform` to record
+the full chain of transformations applied.
+
 ## Examples
 
 ```julia
@@ -97,7 +100,7 @@ lambda = 1.0
 rescaled = rescale(sol, t -> exp(-0.5 * lambda * t))
 ```
 
-See also: [`reduce_tree`](@ref), [`ReducedBranchingProcessSolution`](@ref)
+See also: [`rescale!`](@ref), [`reduce_tree`](@ref), [`ReducedBranchingProcessSolution`](@ref)
 """
 function rescale(sol::ReducedBranchingProcessSolution, f)
     u_new = [f(t) .* u for (t, u) in zip(sol.t, sol.u)]
@@ -108,11 +111,41 @@ function rescale(sol::ReducedBranchingProcessSolution, f)
                                            interp=sol.interp,
                                            tslocation=sol.tslocation,
                                            retcode=sol.retcode,
-                                           transform=sol.transform,
+                                           transform=f ∘ sol.transform,
                                            reduction=sol.reduction,
                                            original_solution=sol.original_solution,
                                            p=sol.p,
                                            sys=sol.sys)
+end
+
+"""
+    rescale!(sol::ReducedBranchingProcessSolution, f)
+
+Rescale the solution values of a [`ReducedBranchingProcessSolution`](@ref) elementwise
+in-place by a function `f` of the corresponding time step values. Modifies `sol.u`
+directly so that each element becomes `f(t) .* u` at the corresponding time point `t`.
+Returns the modified solution.
+
+The scaling function `f` should accept a single time value and return either a scalar
+or a vector compatible with the solution values `u`.
+
+Note: because [`ReducedBranchingProcessSolution`](@ref) is an immutable struct, only the
+mutable `u` field is updated in-place; the `transform` field is not changed.
+
+## Examples
+
+```julia
+lambda = 1.0
+rescale!(sol, t -> exp(-lambda * t))
+```
+
+See also: [`rescale`](@ref), [`reduce_tree`](@ref), [`ReducedBranchingProcessSolution`](@ref)
+"""
+function rescale!(sol::ReducedBranchingProcessSolution, f)
+    for (i, t) in enumerate(sol.t)
+        sol.u[i] = f(t) .* sol.u[i]
+    end
+    return sol
 end
 
 
@@ -234,7 +267,7 @@ function timeseries_steps_crosscor(sim)
 end
 
 """
-    fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple())
+    fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)
 
 Simulate a Luria-Delbrück fluctuation experiment by running `nclone` independent branching
 process simulations, each starting from a different initial state sampled from `u0_dist`.
@@ -268,6 +301,9 @@ interface, and each clone's branching tree is reduced to a time series via [`red
   for each individual trajectory (e.g. `(; dt=0.1, saveat=0:0.1:5, reltol=1e-6)`).
 - `reduce_kwargs=NamedTuple()`: Additional keyword arguments passed to [`solve_and_reduce`](@ref)
   (e.g. `(; output_dt=0.01, transform=log)`).
+- `rescale=nothing`: An optional scaling function applied to each clone's reduced solution
+  via [`rescale!`](@ref) before returning. The function should accept a single time value
+  and return a scalar or vector compatible with the solution values.
 
 ## Returns
 
@@ -297,10 +333,15 @@ results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100;
 results_max = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100; 
                                    reduction=maximum,
                                    solver_kwargs=(; reltol=1e-8, abstol=1e-10))
+
+# Rescale each clone's solution by exp(-lambda*t) before returning
+lambda = 1.0
+results_rescaled = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100;
+                                         rescale=t -> exp(-lambda * t))
 ```
 
 See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_reduce`](@ref),
-[`ReducedBranchingProcessSolution`](@ref)
+[`rescale!`](@ref), [`ReducedBranchingProcessSolution`](@ref)
 """
 function fluctuation_experiment(bp::ConstantRateBranchingProblem,
                                 u0_dist::Distribution,
@@ -309,8 +350,15 @@ function fluctuation_experiment(bp::ConstantRateBranchingProblem,
                                 ensemble_alg=EnsembleThreads(),
                                 alg=nothing,
                                 solver_kwargs=NamedTuple(),
-                                reduce_kwargs=NamedTuple())
+                                reduce_kwargs=NamedTuple(),
+                                rescale=nothing)
     prob_func = (prob, i, _) -> remake(prob, u0=rand(u0_dist))
     ep = EnsembleProblem(bp; prob_func=prob_func)
-    return solve(ep, alg, ensemble_alg; trajectories=nclone, reduction=reduction, reduce_kwargs..., solver_kwargs...)
+    results = solve(ep, alg, ensemble_alg; trajectories=nclone, reduction=reduction, reduce_kwargs..., solver_kwargs...)
+    if rescale !== nothing
+        for sol in results.u
+            rescale!(sol, rescale)
+        end
+    end
+    return results
 end

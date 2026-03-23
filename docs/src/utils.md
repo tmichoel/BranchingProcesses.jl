@@ -8,6 +8,7 @@ CurrentModule = BranchingProcesses
 tip_values
 reduce_tree
 rescale
+rescale!
 node_generations
 fluctuation_experiment
 ```
