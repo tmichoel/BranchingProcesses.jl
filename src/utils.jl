@@ -288,7 +288,7 @@ bp = ConstantRateBranchingProblem(prob, 1.0, 2)
 # Simulate 100 clones with initial states drawn from a log-normal distribution
 results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100)
 
-# Use different dt for solver and reduce_tree
+# Use different dt for solver and solve_and_reduce
 results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100;
                                 solver_kwargs=(; dt=0.1, saveat=0:0.1:5),
                                 reduce_kwargs=(; dt=0.02, transform=log))
@@ -299,7 +299,7 @@ results_max = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100;
                                    solver_kwargs=(; reltol=1e-8, abstol=1e-10))
 ```
 
-See also: [`ConstantRateBranchingProblem`](@ref), [`reduce_tree`](@ref),
+See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_reduce`](@ref),
 [`ReducedBranchingProcessSolution`](@ref)
 """
 function fluctuation_experiment(bp::ConstantRateBranchingProblem,
