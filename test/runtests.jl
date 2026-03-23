@@ -445,6 +445,20 @@ end
             @test all(v[1] >= 0 for v in sol.u)
         end
     end
+    @testset "rescale keyword rescales all solutions in-place" begin
+        nclone = 3
+        lambda = 1.0
+        results_rescaled = fluctuation_experiment(bp, u0_dist, nclone;
+                                                  alg=SSAStepper(),
+                                                  ensemble_alg=EnsembleSerial(),
+                                                  rescale=t -> exp(-lambda * t))
+        for sol in results_rescaled
+            @test sol isa ReducedBranchingProcessSolution
+            # After rescaling by exp(-lambda*t), values should be floating-point and finite
+            @test eltype(sol.u[1]) <: AbstractFloat
+            @test all(isfinite(v[1]) for v in sol.u)
+        end
+    end
 end
 
 @testset "rescale utility function" begin
@@ -494,11 +508,32 @@ end
         end
     end
 
-    @testset "rescale preserves other fields" begin
-        rescaled = rescale(sol, t -> exp(-lambda * t))
+    @testset "rescale updates transform field" begin
+        f = t -> exp(-lambda * t)
+        rescaled = rescale(sol, f)
         @test rescaled.prob === sol.prob
         @test rescaled.reduction === sol.reduction
-        @test rescaled.transform === sol.transform
+        # transform field should be f ∘ sol.transform
+        @test rescaled.transform isa Base.ComposedFunction
+        # verify functional equivalence: (f ∘ identity)(x) == f(x)
+        for t in sol.t
+            @test rescaled.transform(t) ≈ f(t)
+        end
+    end
+
+    @testset "rescale! modifies u values in-place" begin
+        # deep-copy u before rescaling to compare
+        u_before = deepcopy(sol.u)
+        rescale!(sol, t -> exp(-lambda * t))
+        for (t, u_old, u_new) in zip(sol.t, u_before, sol.u)
+            @test u_new ≈ exp(-lambda * t) .* u_old
+        end
+    end
+
+    @testset "rescale! returns the same object" begin
+        sol2 = results.u[2]
+        ret = rescale!(sol2, t -> 1.0)
+        @test ret === sol2
     end
 end
 
