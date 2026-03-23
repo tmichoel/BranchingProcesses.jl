@@ -416,7 +416,7 @@ end
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
                                          ensemble_alg=EnsembleThreads(),
-                                         reduce_kwargs=(; dt=dt))
+                                         reduce_kwargs=(; output_dt=dt))
         for sol in results
             @test sol.t[1] ≈ tspan[1]
             @test sol.t[end] ≈ tspan[2]

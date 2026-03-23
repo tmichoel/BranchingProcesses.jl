@@ -46,7 +46,7 @@ u0_dist = product_distribution([Dirac(1), Dirac(0)])
 nothing # hide
 ```
 
-We then call [`fluctuation_experiment`](@ref) to simulate 100 independent clones. Each clone starts from a fresh sample drawn from `u0_dist`, and the branching tree is immediately reduced (summed over all live cells) by [`reduce_tree`](@ref):
+We then call [`fluctuation_experiment`](@ref) to simulate 100 independent clones. Each clone starts from a fresh sample drawn from `u0_dist`, and the branching tree is immediately reduced (summed over all live cells) via [`solve_and_reduce`](@ref):
 
 ```@example fe
 using Random # hide
@@ -54,7 +54,7 @@ Random.seed!(42) # hide
 results = fluctuation_experiment(bjprob, u0_dist, 100;
                                  alg=SSAStepper(),
                                  ensemble_alg=EnsembleThreads(),
-                                 reduce_kwargs=(; dt=0.1));
+                                 reduce_kwargs=(; output_dt=0.1));
 nothing # hide
 ```
 

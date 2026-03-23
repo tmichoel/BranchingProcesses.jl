@@ -266,8 +266,8 @@ interface, and each clone's branching tree is reduced to a time series via [`red
   Defaults to `nothing` (automatic algorithm selection).
 - `solver_kwargs=NamedTuple()`: Additional keyword arguments passed to the `solve` function
   for each individual trajectory (e.g. `(; dt=0.1, saveat=0:0.1:5, reltol=1e-6)`).
-- `reduce_kwargs=NamedTuple()`: Additional keyword arguments passed to [`reduce_tree`](@ref)
-  (e.g. `(; dt=0.01, transform=log, store_original=false)`).
+- `reduce_kwargs=NamedTuple()`: Additional keyword arguments passed to [`solve_and_reduce`](@ref)
+  (e.g. `(; output_dt=0.01, transform=log)`).
 
 ## Returns
 
@@ -296,8 +296,7 @@ results = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100;
 # Use a custom reduction function with specific solver tolerances
 results_max = fluctuation_experiment(bp, LogNormal(0.0, 0.5), 100; 
                                    reduction=maximum,
-                                   solver_kwargs=(; reltol=1e-8, abstol=1e-10),
-                                   reduce_kwargs=(; store_original=false))
+                                   solver_kwargs=(; reltol=1e-8, abstol=1e-10))
 ```
 
 See also: [`ConstantRateBranchingProblem`](@ref), [`reduce_tree`](@ref),
@@ -312,7 +311,6 @@ function fluctuation_experiment(bp::ConstantRateBranchingProblem,
                                 solver_kwargs=NamedTuple(),
                                 reduce_kwargs=NamedTuple())
     prob_func = (prob, i, _) -> remake(prob, u0=rand(u0_dist))
-    output_func = (sol, i) -> (reduce_tree(sol; reduction=reduction, reduce_kwargs...), false)
-    ep = EnsembleProblem(bp; prob_func=prob_func, output_func=output_func)
-    return solve(ep, alg, ensemble_alg; trajectories=nclone, solver_kwargs...)
+    ep = EnsembleProblem(bp; prob_func=prob_func)
+    return solve(ep, alg, ensemble_alg; trajectories=nclone, reduction=reduction, reduce_kwargs..., solver_kwargs...)
 end
