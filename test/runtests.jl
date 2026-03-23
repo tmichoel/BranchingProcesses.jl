@@ -631,6 +631,11 @@ end
         @test sol.reduction === sum
         @test sol.transform === identity
         @test sol.prob === bp
+        @test sol.nparticles isa Vector{Int}
+        @test length(sol.nparticles) == length(sol.t)
+        @test all(sol.nparticles .>= 0)
+        @test sol.combine !== nothing
+        @test sol.neutral_fn !== nothing
     end
 
     @testset "transform is applied" begin

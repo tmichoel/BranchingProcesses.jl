@@ -357,6 +357,9 @@ function solve_and_reduce(bp::ConstantRateBranchingProblem, alg=nothing;
     return ReducedBranchingProcessSolution(acc.u, collect(trange);
                                            prob=bp,
                                            transform=transform,
-                                           reduction=reduction)
+                                           reduction=reduction,
+                                           nparticles=acc.nparticles,
+                                           combine=acc.combine,
+                                           neutral_fn=acc.neutral_fn)
 end
 
