@@ -180,7 +180,7 @@ which provides standard indexing, iteration, and time-series interface compatibl
 $(FIELDS)
 
 """
-struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType,PType,SysType} <: RecursiveArrayTools.AbstractDiffEqArray{T,N,uType}
+struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType,PType,SysType,NpType,CombType,NeutType} <: RecursiveArrayTools.AbstractDiffEqArray{T,N,uType}
     """The reduced values at each time point."""
     u::uType
     """The time points."""
@@ -207,6 +207,12 @@ struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedTy
     p::PType
     """Symbolic system (unused; included for RecursiveArrayTools.AbstractDiffEqArray compatibility)."""
     sys::SysType
+    """Number of particles alive at each time point (computed during solve_and_reduce)."""
+    nparticles::NpType
+    """Incremental binary combine function used during on-the-fly reduction (computed during solve_and_reduce)."""
+    combine::CombType
+    """Factory function returning the neutral element for the reduction (computed during solve_and_reduce)."""
+    neutral_fn::NeutType
 end
 
 # Main constructor
@@ -221,7 +227,10 @@ function ReducedBranchingProcessSolution(u, t;
                                        reduction="sum",
                                        original_solution=nothing,
                                        p=nothing,
-                                       sys=nothing)
+                                       sys=nothing,
+                                       nparticles=nothing,
+                                       combine=nothing,
+                                       neutral_fn=nothing)
     T = eltype(u[1])
     N = ndims(u[1]) + 1
     uType = typeof(u)
@@ -234,9 +243,13 @@ function ReducedBranchingProcessSolution(u, t;
     OrigType = typeof(original_solution)
     PType = typeof(p)
     SysType = typeof(sys)
+    NpType = typeof(nparticles)
+    CombType = typeof(combine)
+    NeutType = typeof(neutral_fn)
 
-    return ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType,PType,SysType}(
-        u, t, prob, alg, dense, interp, tslocation, retcode, transform, reduction, original_solution, p, sys
+    return ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedType,OrigType,PType,SysType,NpType,CombType,NeutType}(
+        u, t, prob, alg, dense, interp, tslocation, retcode, transform, reduction, original_solution, p, sys,
+        nparticles, combine, neutral_fn
     )
 end
 
