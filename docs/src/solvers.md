@@ -7,6 +7,7 @@ CurrentModule = BranchingProcesses
 ```@docs
 solve
 solve_and_split
+solve_and_reduce
 remake
 sample_lifetime
 sample_offspring

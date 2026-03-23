@@ -551,3 +551,119 @@ end
         @test sol_str isa ReducedBranchingProcessSolution
     end
 end
+
+@testset "solve_and_reduce tests" begin
+    using Distributions
+    using SciMLBase
+    using JumpProcesses
+
+    u0 = [1]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    affect!(integrator) = (integrator.u[1] += 1)
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+
+    @testset "returns ReducedBranchingProcessSolution" begin
+        sol = solve_and_reduce(bp, SSAStepper())
+        @test sol isa ReducedBranchingProcessSolution
+    end
+
+    @testset "callable via solve with reduction kwarg" begin
+        sol = solve(bp, SSAStepper(); reduction=sum)
+        @test sol isa ReducedBranchingProcessSolution
+    end
+
+    @testset "time grid is correct" begin
+        output_dt = 0.1
+        sol = solve_and_reduce(bp, SSAStepper(); output_dt=output_dt)
+        @test sol.t[1] ≈ tspan[1]
+        @test sol.t[end] ≈ tspan[2]
+        @test length(sol.t) == length(collect(tspan[1]:output_dt:tspan[2]))
+    end
+
+    @testset "time grid correct via solve dispatch" begin
+        output_dt = 0.1
+        sol = solve(bp, SSAStepper(); reduction=sum, output_dt=output_dt)
+        @test sol.t[1] ≈ tspan[1]
+        @test sol.t[end] ≈ tspan[2]
+        @test length(sol.t) == length(collect(tspan[1]:output_dt:tspan[2]))
+    end
+
+    @testset "all reduced values are finite and non-negative (sum)" begin
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=sum, output_dt=0.1)
+        @test all(isfinite(v[1]) for v in sol.u)
+        @test all(v[1] >= 0 for v in sol.u)
+    end
+
+    @testset "all reduced values are finite and non-negative (prod)" begin
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=prod, output_dt=0.1)
+        @test all(isfinite(v[1]) for v in sol.u)
+        @test all(v[1] >= 0 for v in sol.u)
+    end
+
+    @testset "all reduced values are finite (maximum)" begin
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=maximum, output_dt=0.1)
+        @test all(isfinite(v[1]) for v in sol.u)
+    end
+
+    @testset "all reduced values are finite (minimum)" begin
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=minimum, output_dt=0.1)
+        @test all(isfinite(v[1]) for v in sol.u)
+    end
+
+    @testset "string reductions work" begin
+        sol_sum  = solve_and_reduce(bp, SSAStepper(); reduction="sum",  output_dt=0.1)
+        sol_prod = solve_and_reduce(bp, SSAStepper(); reduction="prod",  output_dt=0.1)
+        sol_max  = solve_and_reduce(bp, SSAStepper(); reduction="max",  output_dt=0.1)
+        sol_min  = solve_and_reduce(bp, SSAStepper(); reduction="min",  output_dt=0.1)
+        @test sol_sum  isa ReducedBranchingProcessSolution
+        @test sol_prod isa ReducedBranchingProcessSolution
+        @test sol_max  isa ReducedBranchingProcessSolution
+        @test sol_min  isa ReducedBranchingProcessSolution
+    end
+
+    @testset "reduction metadata stored correctly" begin
+        sol = solve_and_reduce(bp, SSAStepper(); reduction=sum, output_dt=0.1)
+        @test sol.reduction === sum
+        @test sol.transform === identity
+        @test sol.prob === bp
+    end
+
+    @testset "transform is applied" begin
+        # At t=0 there is always exactly one particle alive with its initial value u0=[1].
+        # So the sum with identity gives [1] and with transform=x->2x gives [2].
+        sol_plain  = solve_and_reduce(bp, SSAStepper(); reduction=sum, output_dt=0.1)
+        sol_scaled = solve_and_reduce(bp, SSAStepper(); reduction=sum, transform=x -> 2 .* x, output_dt=0.1)
+        # Both runs may differ after t=0 (different random trees), but at t=0 the
+        # first element is deterministic: 1 particle at u0=[1].
+        @test sol_plain.u[1]  == [1]
+        @test sol_scaled.u[1] == [2]
+    end
+
+    @testset "solve without reduction still returns BranchingProcessSolution" begin
+        sol = solve(bp, SSAStepper())
+        @test sol isa BranchingProcessSolution
+    end
+
+    @testset "unsupported reduction throws ArgumentError" begin
+        @test_throws ArgumentError solve_and_reduce(bp, SSAStepper(); reduction=x -> x)
+    end
+
+    @testset "constant process with Dirac lifetime: all values are positive" begin
+        # Use a JumpProblem with zero event rate (constant process) and a Dirac(1.0)
+        # lifetime so the tree structure is fully deterministic.  Every particle always
+        # has value [1], so the sum at every time step equals the number of alive particles.
+        p_zero = [0.0]
+        disc_prob_det = DiscreteProblem(u0, tspan, p_zero)
+        jump_prob_det = JumpProblem(disc_prob_det, Direct(), jump)
+        bp_det = ConstantRateBranchingProblem(jump_prob_det, Dirac(1.0), 2)
+        sol_det = solve_and_reduce(bp_det, SSAStepper(); reduction=sum, output_dt=0.5)
+        @test sol_det isa ReducedBranchingProcessSolution
+        # There is always at least one particle alive, so the sum must be positive.
+        @test all(v[1] > 0 for v in sol_det.u)
+    end
+end
