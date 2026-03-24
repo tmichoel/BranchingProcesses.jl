@@ -142,8 +142,8 @@ rescale!(sol, t -> exp(-lambda * t))
 See also: [`rescale`](@ref), [`reduce_tree`](@ref), [`ReducedBranchingProcessSolution`](@ref)
 """
 function rescale!(sol::ReducedBranchingProcessSolution, f)
-    for (i, t) in enumerate(sol.t)
-        sol.u[i] = f(t) .* sol.u[i]
+    Threads.@threads for i in eachindex(sol.t)
+        sol.u[i] = f(sol.t[i]) .* sol.u[i]
     end
     return sol
 end
@@ -356,8 +356,8 @@ function fluctuation_experiment(bp::ConstantRateBranchingProblem,
     ep = EnsembleProblem(bp; prob_func=prob_func)
     results = solve(ep, alg, ensemble_alg; trajectories=nclone, reduction=reduction, reduce_kwargs..., solver_kwargs...)
     if rescale !== nothing
-        for sol in results.u
-            rescale!(sol, rescale)
+        Threads.@threads for i in eachindex(results.u)
+            rescale!(results.u[i], rescale)
         end
     end
     return results
