@@ -342,14 +342,14 @@ function solve_and_reduce(bp::ConstantRateBranchingProblem, alg=nothing;
     first_valid_idx = findfirst(!isnothing, acc.u)
     if first_valid_idx !== nothing
         neutral = neutral_fn(acc.u[first_valid_idx])
-        for i in eachindex(acc.u)
+        Threads.@threads for i in eachindex(acc.u)
             if isnothing(acc.u[i])
                 acc.u[i] = neutral
             end
         end
     else
         # Edge case: no particles contributed at all (empty tree).
-        for i in eachindex(acc.u)
+        Threads.@threads for i in eachindex(acc.u)
             acc.u[i] = [0.0]
         end
     end
