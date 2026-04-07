@@ -1,5 +1,72 @@
 # Changelog
 
+## BranchingProcesses v0.6.0
+
+[Diff since v0.5.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.5.0...v0.6.0)
+
+## Breaking Changes
+
+- **`fluctuation_experiment` internals changed**: `fluctuation_experiment` now uses `solve_and_reduce` (on-the-fly reduction) instead of `solve_and_split` + `reduce_tree`. The keyword argument `reduce_kwargs` now forwards to `solve_and_reduce` rather than `reduce_tree`; use `output_dt` (instead of `dt`) inside `reduce_kwargs` to control the time-grid spacing. Code that relied on `store_original` or other `reduce_tree`-only options inside `reduce_kwargs` must be updated.
+- **`timestep_crosscov` / `timestep_crosscor` return type changed**: These functions now return a flat `Vector` (the covariance/correlation matrix reshaped with `[:]`) instead of a matrix together with a mean vector. `timeseries_steps_crosscov` / `timeseries_steps_crosscor` now return a `DiffEqArray` of these flat vectors. Code that destructured the previous `(C, mean)` return value must be updated.
+
+## New Features
+
+- **`solve_and_reduce`: on-the-fly tree reduction**: New function `solve_and_reduce` simulates a branching process and accumulates a reduced time series on the fly, without ever constructing or storing the full `BranchingProcessNode` tree. Supports `sum`, `prod`, `maximum`, and `minimum` reductions. The `output_dt` keyword argument controls the time-grid spacing of the resulting `ReducedBranchingProcessSolution`.
+
+  ```julia
+  sol = solve(bp, alg; reduction=sum, output_dt=0.01)
+  ```
+
+- **`solve` dispatch to `solve_and_reduce`**: `SciMLBase.solve` on a `ConstantRateBranchingProblem` now accepts an optional `reduction` keyword argument. When provided, it automatically dispatches to `solve_and_reduce` and returns a `ReducedBranchingProcessSolution` directly.
+
+- **`rescale` and `rescale!` utilities**: New functions for elementwise time-dependent rescaling of a `ReducedBranchingProcessSolution`. `rescale(sol, f)` returns a new solution with values `f(t) .* u` at each time point; `rescale!` performs the same operation in-place. The `rescale` function also composes the scaling function with `sol.transform` to record the full transformation chain.
+
+  ```julia
+  lambda = 1.0
+  rescaled = rescale(sol, t -> exp(-lambda * t))
+  rescale!(sol, t -> exp(-lambda * t))
+  ```
+
+- **`rescale` keyword in `fluctuation_experiment`**: `fluctuation_experiment` now accepts an optional `rescale` keyword argument. When provided, each clone's reduced solution is rescaled in-place via `rescale!` before being returned.
+
+- **Time-dependent `reduction` in `reduce_tree`**: The `reduction` argument of `reduce_tree` now optionally accepts a two-argument callable `reduction(t, vals)` in addition to the existing one-argument form `reduction(vals)`. This allows time-dependent rescaling to be applied at the point of reduction.
+
+- **`timestep_crosscov` / `timestep_crosscor` and `timeseries_steps_crosscov` / `timeseries_steps_crosscor`**: New utility functions for computing cross-covariance and cross-correlation matrices across ensemble members at each time step. Given an ensemble of `d`-dimensional trajectories, `timestep_crosscov(sim, i)` returns the `d×d` sample covariance matrix (as a flat vector of length `d²`) at time step `i`; `timeseries_steps_crosscov(sim)` returns a `DiffEqArray` of these vectors over all time steps. Analogous functions exist for correlation (`crosscor`).
+
+- **`ReducedBranchingProcessSolution` retains `nparticles`, `combine`, and `neutral_fn` fields**: When produced by `solve_and_reduce`, a `ReducedBranchingProcessSolution` now stores the number of particles alive at each time step (`nparticles`), the incremental binary combine function (`combine`), and the neutral-element factory (`neutral_fn`). These fields default to `nothing` when the solution is produced by `reduce_tree`.
+
+- **`LinearAlgebra` and `Statistics` added as runtime dependencies**: Required by the new cross-covariance/correlation utilities.
+
+- **`RecursiveArrayTools` compat updated to `"3, 4"`**: Both major versions are now supported.
+
+## Bug Fixes
+
+- No bug fixes in this release.
+
+## Performance Improvements
+
+- **Parallel for loops with `Threads.@threads`**: Independent `for` loops in `solve_and_split`/`solve_and_reduce` and related utilities are now parallelized using `Threads.@threads`, improving performance on multi-threaded Julia sessions.
+
+## Internal Changes
+
+- CompatHelper: bump compat for `RecursiveArrayTools` to `4` in `[deps]` and `[extras]` (#35, #36).
+
+## Merged pull requests
+
+- Add `timestep_crosscov`/`crosscor` and `timeseries_steps_crosscov`/`crosscor` utility functions (#26) (@Copilot)
+- Add `rescale` utility and time-dependent `reduction` support in `reduce_tree` (#27) (@Copilot)
+- Rewrite `timestep_crosscov`/`crosscor` to compute cross-variable covariance matrices (#28) (@Copilot)
+- Simplify crosscov/crosscor return types: drop mean, flatten matrices, use `DiffEqArray` (#29) (@Copilot)
+- Add `solve_and_reduce`: on-the-fly tree reduction without storing the full branching tree (#30) (@Copilot)
+- Retain `OnTheFlyReducedSolution` fields in `ReducedBranchingProcessSolution` (#31) (@Copilot)
+- Use `solve_and_reduce` in `fluctuation_experiment` via solver kwargs instead of `output_func` (#32) (@Copilot)
+- Extend rescale functionality: transform composition, in-place `rescale!`, and `fluctuation_experiment` integration (#33) (@Copilot)
+- Parallelize independent for loops with `Threads.@threads` (#34) (@Copilot)
+- CompatHelper: bump compat for RecursiveArrayTools in `[extras]` to 4 (#35) (@github-actions[bot])
+- CompatHelper: bump compat for RecursiveArrayTools to 4 (#36) (@github-actions[bot])
+
+---
+
 ## BranchingProcesses v0.5.0
 
 [Diff since v0.4.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.4.0...v0.5.0)
