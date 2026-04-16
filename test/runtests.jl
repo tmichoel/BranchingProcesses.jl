@@ -830,8 +830,8 @@ end
     end
 
     @testset "all leaf positions unique (no two nodes share a slot)" begin
-        # With a deterministic Dirac(0.5) lifetime and nchild=2, the tree is binary
-        # and balanced. All leaf positions should be distinct.
+        # With a Dirac(0.5) lifetime, nodes divide exactly at 0.5, 1.0, 1.5, 2.0, 2.5.
+        # All leaf (currently-live) node positions should be distinct.
         bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
         sol = solve(bp, EM(); dt=0.01)
         leaf_positions = [node.position for node in Leaves(sol.tree)]
@@ -839,8 +839,8 @@ end
         @test length(unique_positions) == length(leaf_positions)
     end
 
-    @testset "tissue_growth! on tree with 1 daughter (leaf root)" begin
-        # A root that is a leaf (lifetime > tspan) should get position [0] in 1D.
+    @testset "tissue_growth! on single-node tree (leaf root)" begin
+        # A root that never divides (lifetime >> tspan) should get position [0] in 1D.
         prob_short = SDEProblem(f, g, u0, (0.0, 0.1))
         bp = ConstantRateBranchingProblem(prob_short, Exponential(1000.0), 2; ndim=1)
         sol = solve(bp, EM(); dt=0.01)
