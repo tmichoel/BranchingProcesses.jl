@@ -1,7 +1,7 @@
 # spatial.jl — Tissue growth algorithm for branching processes
 #
 # Implements an adaptation of Algorithm 3 from:
-#   Bhatt et al. (2022) "Constructive connectomics: How neuronal axons get from here
+#   Kerstjens et al. (2022) "Constructive connectomics: How neuronal axons get from here
 #   to there using gene-expression maps derived from their family trees",
 #   PLOS Computational Biology, https://doi.org/10.1371/journal.pcbi.1010382
 
@@ -34,21 +34,19 @@ end
     tissue_growth!(tree::BranchingProcessNode, ndim::Int)
 
 Assign spatial grid positions to all nodes in the branching process tree using an
-adaptation of Algorithm 3 from [Bhatt et al. (2022)](https://doi.org/10.1371/journal.pcbi.1010382).
+adaptation of Algorithm 3 from [Kerstjens et al. (2022)](https://doi.org/10.1371/journal.pcbi.1010382).
 
 The algorithm places the root node at the origin of an unbounded `ndim`-dimensional
 integer grid and processes all internal nodes (those with children) in order of
-ascending division time. For each dividing node, a random ray direction is drawn
-uniformly from the sphere surface and discretised to an integer lattice step. The
-two-daughter push-and-place operation from the original algorithm is applied `n - 1`
-times in sequence (once per extra daughter needed), each time starting one step further
-along the ray. This correctly handles gaps in the occupied region and avoids overwriting
-non-consecutive cells:
+ascending division time. For a node with `n` daughters, `n - 1` independent random
+ray directions are drawn (one per extra daughter needed). For each ray:
 
-- For daughter `k` (`k = 1, …, n - 1`): collect consecutive occupied cells starting at
-  `p + k·step`; push each one step outward (farthest first); place daughter `k` at the
-  now-free slot `p + k·step`.
-- Daughter `n` (the last) replaces the parent at position `p`.
+- Consecutive occupied slots along the ray are pushed one step outward (farthest first).
+- The freeed adjacent slot is occupied by the next daughter.
+
+The last daughter always replaces the parent at its current position. Using independent
+rays for each daughter (rather than all daughters along the same ray) better preserves
+the approximate radial symmetry of the growing tissue.
 
 ## Arguments
 
@@ -89,18 +87,12 @@ function tissue_growth!(tree::BranchingProcessNode{T}, ndim::Int) where T
         curr_pos = node.position      # current grid position of this node (Vector{Int})
         n_daughters = length(node.children)
 
-        # Draw a random integer lattice step direction
-        step = _random_step(ndim)
-
-        # Place daughters 1 … n-1 via sequential single-step pushes.
-        # For daughter i, we need to free the slot at curr_pos + i·step.
-        # We do this by collecting consecutive occupied cells starting from
-        # curr_pos + i·step and pushing each one step outward (farthest first).
-        # This is equivalent to applying the original two-daughter algorithm n-1 times,
-        # each time starting one step further along the ray, so that previously placed
-        # daughters are never disturbed and cells beyond gaps in the ray are not skipped.
+        # For daughters 1 … n-1, cast an independent ray for each.
+        # Each ray frees the adjacent slot and places one daughter there.
+        # Using independent ray directions preserves approximate radial symmetry.
         for i in 1:(n_daughters - 1)
-            start_pos = curr_pos .+ i .* step
+            step = _random_step(ndim)   # fresh independent direction per daughter
+            start_pos = curr_pos .+ step
             ray_positions = Vector{Int}[]
             p = start_pos
             while haskey(grid, Tuple(p))
@@ -139,7 +131,7 @@ end
 
 Assign spatial grid positions to all [`BranchingProcessNode`](@ref)s in the solution
 tree using an adaptation of Algorithm 3 from
-[Bhatt et al. (2022)](https://doi.org/10.1371/journal.pcbi.1010382).
+[Kerstjens et al. (2022)](https://doi.org/10.1371/journal.pcbi.1010382).
 
 When `ndim` is not provided it is read from `sol.prob.ndim`. If `sol.prob.ndim` is
 `0` (no spatial dimension configured in the problem), an `ArgumentError` is thrown and
