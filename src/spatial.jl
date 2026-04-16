@@ -108,14 +108,14 @@ function tissue_growth!(tree::BranchingProcessNode{T}, ndim::Int) where T
                 p = p .+ step
             end
             for pos in reverse(ray_positions)
-                new_pos = pos .+ step
+                new_pos = pos .+ step   # `.+` always allocates a new vector
                 cell = grid[Tuple(pos)]
                 delete!(grid, Tuple(pos))
                 grid[Tuple(new_pos)] = cell
-                cell.position = copy(new_pos)
+                cell.position = new_pos  # safe: new_pos is freshly allocated, not reused
             end
             daughter = node.children[i]
-            daughter.position = copy(start_pos)
+            daughter.position = start_pos  # safe: start_pos is freshly allocated each loop iteration
             grid[Tuple(start_pos)] = daughter
         end
 
