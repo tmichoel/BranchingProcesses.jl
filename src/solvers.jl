@@ -5,16 +5,18 @@ Solve a branching stochastic process with constant branching rate defined by the
 
 When the keyword argument `reduction` is provided (e.g. `reduction=sum`), the on-the-fly solver [`solve_and_reduce`](@ref) is used instead of [`solve_and_split`](@ref), and a [`ReducedBranchingProcessSolution`](@ref) is returned directly without storing any [`BranchingProcessNode`](@ref)s. The keyword arguments `transform` (default: `identity`) and `output_dt` (default: `0.01`) control the transform applied to particle values and the time-grid spacing of the reduced solution, respectively. Any remaining keyword arguments (including `dt`) are passed to the underlying SDE/jump process solver. See [`solve_and_reduce`](@ref) for details on supported reduction functions.
 
-When `reduction` is not provided (the default), returns a [`BranchingProcessSolution`](@ref) containing the problem definition and the resulting tree structure.
+When `reduction` is not provided (the default), returns a [`BranchingProcessSolution`](@ref) containing the problem definition and the resulting tree structure. If `bp.ndim` is 1, 2, or 3, spatial grid positions are automatically assigned to all [`BranchingProcessNode`](@ref)s using [`tissue_growth!`](@ref) after the tree is built.
 
-See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_split`](@ref), [`solve_and_reduce`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
+See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_split`](@ref), [`solve_and_reduce`](@ref), [`tissue_growth!`](@ref), [common solver options](https://docs.sciml.ai/DiffEqDocs/stable/basics/common_solver_opts/)
 """
 function SciMLBase.solve(bp::T, alg::A=nothing; reduction=nothing, kwargs...) where {T<:ConstantRateBranchingProblem, A<:Union{SciMLBase.AbstractSciMLAlgorithm,Nothing}}
     if reduction !== nothing
         return solve_and_reduce(bp, alg; reduction=reduction, kwargs...)
     else
         tree = solve_and_split(bp, alg; kwargs...)
-        return BranchingProcessSolution(bp, tree; alg=alg, retcode=SciMLBase.ReturnCode.Success)
+        sol = BranchingProcessSolution(bp, tree; alg=alg, retcode=SciMLBase.ReturnCode.Success)
+        bp.ndim in (1, 2, 3) && tissue_growth!(sol.tree, bp.ndim)
+        return sol
     end
 end
 
@@ -72,9 +74,9 @@ function solve_and_split(prob::P, lifetime::L, nchild::O, alg::A=nothing; kwargs
 end
 
 """
-    SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, kwargs...)
+    SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, ndim=missing, kwargs...)
 
-Remake a [`ConstantRateBranchingProblem`](@ref) with modified fields. The fields `prob`, `lifetime`, and `nchild` can be replaced directly. Any additional keyword arguments (e.g. `u0`, `tspan`, `p`) that are not fields of `ConstantRateBranchingProblem` are passed to `SciMLBase.remake(bp.prob; kwargs...)` to modify the single-particle dynamics problem. This works for both `SDEProblem` and `JumpProblem` inner problems.
+Remake a [`ConstantRateBranchingProblem`](@ref) with modified fields. The fields `prob`, `lifetime`, `nchild`, and `ndim` can be replaced directly. Any additional keyword arguments (e.g. `u0`, `tspan`, `p`) that are not fields of `ConstantRateBranchingProblem` are passed to `SciMLBase.remake(bp.prob; kwargs...)` to modify the single-particle dynamics problem. This works for both `SDEProblem` and `JumpProblem` inner problems.
 
 ## Examples
 
@@ -87,9 +89,12 @@ new_bp = remake(bp, u0=1.0)
 
 # Change both the lifetime and initial condition
 new_bp = remake(bp, lifetime=Exponential(0.5), u0=1.0)
+
+# Enable 2D spatial growth
+new_bp = remake(bp, ndim=2)
 ```
 """
-function SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, kwargs...)
+function SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifetime=missing, nchild=missing, ndim=missing, kwargs...)
     new_prob = if !ismissing(prob)
         isempty(kwargs) ? prob : SciMLBase.remake(prob; kwargs...)
     elseif !isempty(kwargs)
@@ -99,7 +104,8 @@ function SciMLBase.remake(bp::ConstantRateBranchingProblem; prob=missing, lifeti
     end
     new_lifetime = ismissing(lifetime) ? bp.lifetime : lifetime
     new_nchild = ismissing(nchild) ? bp.nchild : nchild
-    return ConstantRateBranchingProblem(new_prob, new_lifetime, new_nchild)
+    new_ndim = ismissing(ndim) ? bp.ndim : ndim
+    return ConstantRateBranchingProblem(new_prob, new_lifetime, new_nchild; ndim=new_ndim)
 end
 
 """

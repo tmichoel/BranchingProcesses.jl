@@ -17,8 +17,14 @@ struct ConstantRateBranchingProblem{P<:SciMLBase.AbstractDEProblem, L<:Univariat
     lifetime::L
     """The number of children to be created for each particle, which can be a non-negative integer or a [discrete distribution](https://juliastats.org/Distributions.jl/stable/univariate/#Discrete-Distributions) with non-negative support from which the number of children is sampled."""
     nchild::O
+    """Spatial dimension for the tissue growth algorithm (0 = no spatial, 1 = line, 2 = plane, 3 = 3D space). When set to 1, 2, or 3, spatial positions are assigned to all [`BranchingProcessNode`](@ref)s after calling [`solve`](@ref)."""
+    ndim::Int
    
-    function ConstantRateBranchingProblem(prob::P, lifetime, nchild::O) where {P<:SciMLBase.AbstractDEProblem, O<:Union{Integer,DiscreteUnivariateDistribution}}
+    function ConstantRateBranchingProblem(prob::P, lifetime, nchild::O; ndim::Int=0) where {P<:SciMLBase.AbstractDEProblem, O<:Union{Integer,DiscreteUnivariateDistribution}}
+        # validate ndim
+        if ndim != 0 && !(ndim in (1, 2, 3))
+            throw(ArgumentError("ndim must be 0 (no spatial), 1, 2, or 3; got $ndim"))
+        end
         # if lifetime is a Real number, interpret it as a branch rate and convert to exponential distribution
         if isa(lifetime, Real)
             if lifetime <= 0
@@ -35,7 +41,7 @@ struct ConstantRateBranchingProblem{P<:SciMLBase.AbstractDEProblem, L<:Univariat
                     throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
                 end
             end
-            return new{P, typeof(lifetime_dist), O}(prob, lifetime_dist, nchild)
+            return new{P, typeof(lifetime_dist), O}(prob, lifetime_dist, nchild, ndim)
         end
         
         # ensure that the lifetime is a univariate distribution with positive support
@@ -57,7 +63,7 @@ struct ConstantRateBranchingProblem{P<:SciMLBase.AbstractDEProblem, L<:Univariat
                 throw(ArgumentError("nchild must be a non-negative integer or a discrete distribution with positive support"))
             end
         end
-        return new{P, typeof(lifetime), O}(prob, lifetime, nchild)
+        return new{P, typeof(lifetime), O}(prob, lifetime, nchild, ndim)
     end
 end;
 
@@ -70,11 +76,17 @@ A tree node structure to hold individual particle solutions in a branching proce
 
 $(FIELDS)
 """
-struct BranchingProcessNode{T<:SciMLBase.AbstractSciMLSolution}
+mutable struct BranchingProcessNode{T<:SciMLBase.AbstractSciMLSolution}
     """The solution of the particle associated to this node."""
     sol::T
     """A vector of child nodes representing offspring particles."""
     children::Vector{BranchingProcessNode{T}}
+    """Spatial grid position of this particle, assigned by [`tissue_growth!`](@ref). `nothing` if no spatial algorithm has been run. The `mutable struct` design is required to support in-place position updates when cells are pushed during tissue growth."""
+    position::Union{Nothing, Vector{Int}}
+
+    function BranchingProcessNode(sol::T, children::Vector{BranchingProcessNode{T}}) where T<:SciMLBase.AbstractSciMLSolution
+        new{T}(sol, children, nothing)
+    end
 end
 
 # AbstractTrees interface for BranchingProcessNode

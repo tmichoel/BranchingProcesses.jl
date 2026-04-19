@@ -707,3 +707,167 @@ end
         @test all(v[1] > 0 for v in sol_det.u)
     end
 end
+
+# ---------------------------------------------------------------------------
+# Spatial growth (tissue_growth!) tests
+# ---------------------------------------------------------------------------
+
+@testset "tissue_growth! tests" begin
+    using AbstractTrees
+    using Distributions
+    using SciMLBase
+    using StochasticDiffEq
+
+    f(u, p, t) = 0.0
+    g(u, p, t) = 0.5
+    u0 = 1.0
+    tspan = (0.0, 3.0)
+    prob = SDEProblem(f, g, u0, tspan)
+
+    # Helper: collect all nodes in a solution tree
+    all_nodes(sol) = collect(PreOrderDFS(sol.tree))
+
+    @testset "ConstantRateBranchingProblem ndim field" begin
+        bp0 = ConstantRateBranchingProblem(prob, 1.0, 2)
+        @test bp0.ndim == 0
+
+        bp1 = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=1)
+        @test bp1.ndim == 1
+
+        bp2 = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        @test bp2.ndim == 2
+
+        bp3 = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=3)
+        @test bp3.ndim == 3
+
+        @test_throws ArgumentError ConstantRateBranchingProblem(prob, 1.0, 2; ndim=4)
+        @test_throws ArgumentError ConstantRateBranchingProblem(prob, 1.0, 2; ndim=-1)
+    end
+
+    @testset "remake preserves ndim" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        new_bp = remake(bp, nchild=3)
+        @test new_bp.ndim == 2
+
+        new_bp2 = remake(bp, ndim=3)
+        @test new_bp2.ndim == 3
+
+        new_bp3 = remake(bp, ndim=0)
+        @test new_bp3.ndim == 0
+    end
+
+    @testset "solve with ndim=0 leaves positions as nothing" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        @test sol isa BranchingProcessSolution
+        @test all(node.position === nothing for node in all_nodes(sol))
+    end
+
+    @testset "solve with ndim=1 assigns 1D positions" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=1)
+        sol = solve(bp, EM(); dt=0.01)
+        nodes = all_nodes(sol)
+        @test all(node.position isa Vector{Int} for node in nodes)
+        @test all(length(node.position) == 1 for node in nodes)
+        # root at origin
+        @test sol.tree.position == [0]
+    end
+
+    @testset "solve with ndim=2 assigns 2D positions" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        nodes = all_nodes(sol)
+        @test all(node.position isa Vector{Int} for node in nodes)
+        @test all(length(node.position) == 2 for node in nodes)
+        @test sol.tree.position == [0, 0]
+    end
+
+    @testset "solve with ndim=3 assigns 3D positions" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=3)
+        sol = solve(bp, EM(); dt=0.01)
+        nodes = all_nodes(sol)
+        @test all(node.position isa Vector{Int} for node in nodes)
+        @test all(length(node.position) == 3 for node in nodes)
+        @test sol.tree.position == [0, 0, 0]
+    end
+
+    @testset "tissue_growth! standalone on BranchingProcessSolution (explicit ndim)" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        # No positions assigned yet
+        @test all(node.position === nothing for node in all_nodes(sol))
+        # Assign via standalone function
+        tissue_growth!(sol, 2)
+        nodes = all_nodes(sol)
+        @test all(node.position isa Vector{Int} for node in nodes)
+        @test all(length(node.position) == 2 for node in nodes)
+        @test sol.tree.position == [0, 0]
+    end
+
+    @testset "tissue_growth! standalone reads ndim from problem" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=3)
+        sol = solve(bp, EM(); dt=0.01)
+        # Already assigned by solve; reset and re-assign via standalone
+        for node in all_nodes(sol)
+            node.position = nothing
+        end
+        tissue_growth!(sol)  # ndim read from sol.prob.ndim = 3
+        nodes = all_nodes(sol)
+        @test all(node.position isa Vector{Int} for node in nodes)
+        @test all(length(node.position) == 3 for node in nodes)
+    end
+
+    @testset "tissue_growth! errors when ndim=0 and no explicit ndim" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        @test_throws ArgumentError tissue_growth!(sol)
+    end
+
+    @testset "tissue_growth! errors on invalid ndim" begin
+        tree = solve(ConstantRateBranchingProblem(prob, 1.0, 2), EM(); dt=0.01).tree
+        @test_throws ArgumentError tissue_growth!(tree, 0)
+        @test_throws ArgumentError tissue_growth!(tree, 4)
+    end
+
+    @testset "all leaf positions unique (no two nodes share a slot)" begin
+        # With a Dirac(0.5) lifetime, nodes divide exactly at 0.5, 1.0, 1.5, 2.0, 2.5.
+        # All leaf (currently-live) node positions should be distinct.
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        leaf_positions = [node.position for node in Leaves(sol.tree)]
+        unique_positions = unique(leaf_positions)
+        @test length(unique_positions) == length(leaf_positions)
+    end
+
+    @testset "tissue_growth! on single-node tree (leaf root)" begin
+        # A root that never divides (lifetime >> tspan) should get position [0] in 1D.
+        prob_short = SDEProblem(f, g, u0, (0.0, 0.1))
+        bp = ConstantRateBranchingProblem(prob_short, Exponential(1000.0), 2; ndim=1)
+        sol = solve(bp, EM(); dt=0.01)
+        # Root never divides within [0, 0.1] with very long lifetime → leaf
+        if isempty(sol.tree.children)
+            @test sol.tree.position == [0]
+        end
+    end
+
+    @testset "tissue_growth! with nchild=3 in 2D" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 3; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        nodes = all_nodes(sol)
+        @test all(node.position isa Vector{Int} for node in nodes)
+        @test all(length(node.position) == 2 for node in nodes)
+        @test sol.tree.position == [0, 0]
+        # Leaf (currently-alive) node positions must all be distinct
+        leaf_positions = [node.position for node in Leaves(sol.tree)]
+        @test length(unique(leaf_positions)) == length(leaf_positions)
+    end
+
+    @testset "tissue_growth! on tree directly" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        tissue_growth!(sol.tree, 2)
+        nodes = all_nodes(sol)
+        @test all(node.position isa Vector{Int} for node in nodes)
+        @test sol.tree.position == [0, 0]
+    end
+end

@@ -26,12 +26,14 @@ RecipesBase = "1"
 RecursiveArrayTools = "3, 4"
 SciMLBase = "2, 3"
 Statistics = "1"
+StochasticDiffEq = "6"
 julia = "1.6"
 
 [extras]
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
+StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["JumpProcesses", "RecursiveArrayTools", "Test"]
+test = ["JumpProcesses", "RecursiveArrayTools", "StochasticDiffEq", "Test"]
