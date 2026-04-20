@@ -40,7 +40,7 @@ export branchingheatmap, BranchingHeatmap
 export animate_heatmaps
 
 """
-    animate_heatmaps(sol::BranchingProcessSolution; nframes=50, func=nothing, fps=10, ndim=nothing, kwargs...)
+    animate_heatmaps(sol::BranchingProcessSolution; nframes=50, func=nothing, ndim=nothing, kwargs...)
 
 Create a `Plots.Animation` by producing heatmaps at `nframes` regularly spaced time points
 over the full time span of `sol`.
@@ -58,13 +58,12 @@ over the full time span of `sol`.
 - `nframes=50`: Number of animation frames.
 - `func=nothing`: Function applied to each particle's state; defaults to the first
   component for vector-valued states, or the value itself for scalar states.
-- `fps=10`: Frame rate used when saving the animation (passed to `gif`/`mp4`).
 - `ndim=nothing`: Override the spatial dimension. Defaults to `sol.prob.ndim`.
 - `kwargs...`: Additional keyword arguments forwarded to [`branchingheatmap`](@ref).
 
 ## Returns
 
-A `Plots.Animation` object. Use `gif(anim, "output.gif"; fps=fps)` to save.
+A `Plots.Animation` object. Use `gif(anim, "output.gif"; fps=10)` to save.
 
 ## Examples
 

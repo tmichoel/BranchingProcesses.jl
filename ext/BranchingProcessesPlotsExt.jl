@@ -6,7 +6,6 @@ using Plots
 function BranchingProcesses.animate_heatmaps(sol::BranchingProcessSolution;
                                               nframes::Int=50,
                                               func=nothing,
-                                              fps::Int=10,
                                               ndim=nothing,
                                               kwargs...)
     # Determine spatial dimension

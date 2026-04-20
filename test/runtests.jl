@@ -973,16 +973,21 @@ end
     @testset "custom func is applied" begin
         bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
         sol = solve(bp, EM(); dt=0.01)
-        bh_default = BranchingHeatmap((sol,))
-        attrs_default = Dict{Symbol,Any}()
-        recipes_default = RecipesBase.apply_recipe(attrs_default, bh_default)
-        @test length(recipes_default) >= 1
 
-        attrs_sq = Dict{Symbol,Any}(:func => u -> first(u)^2)
-        bh_sq = BranchingHeatmap((sol,))
-        recipes_sq = RecipesBase.apply_recipe(attrs_sq, bh_sq)
-        @test length(recipes_sq) >= 1
-        # The values in the squared recipe may differ from default (or be the same if u≈1)
+        # Get heatmap values with default func (identity for scalar)
+        r_default = RecipesBase.apply_recipe(Dict{Symbol,Any}(), BranchingHeatmap((sol,)))[1]
+        _, _, z_default = r_default.args
+        default_vals = filter(!isnan, vec(z_default))
+
+        # Get heatmap values with func = u -> 2u
+        r_double = RecipesBase.apply_recipe(
+            Dict{Symbol,Any}(:func => u -> 2u), BranchingHeatmap((sol,)))[1]
+        _, _, z_double = r_double.args
+        double_vals = filter(!isnan, vec(z_double))
+
+        # Values with 2u should be exactly twice the default values
+        @test length(default_vals) == length(double_vals)
+        @test all(isapprox(2v1, v2; atol=1e-10) for (v1, v2) in zip(default_vals, double_vals))
     end
 
     @testset "recipe respects specified time t" begin
@@ -1092,7 +1097,7 @@ end
     @testset "custom func passed to animate_heatmaps" begin
         bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
         sol = solve(bp, EM(); dt=0.01)
-        anim = animate_heatmaps(sol; nframes=3, func=u -> first(u)^2)
+        anim = animate_heatmaps(sol; nframes=3, func=u -> u^2)
         @test anim isa Plots.Animation
         @test length(anim.frames) == 3
     end
