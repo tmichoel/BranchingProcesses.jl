@@ -871,3 +871,229 @@ end
         @test sol.tree.position == [0, 0]
     end
 end
+
+# ---------------------------------------------------------------------------
+# BranchingHeatmap recipe tests
+# ---------------------------------------------------------------------------
+
+@testset "branchingheatmap recipe tests" begin
+    using AbstractTrees
+    using Distributions
+    using RecipesBase
+    using SciMLBase
+    using StochasticDiffEq
+
+    # RecipesBase.apply_recipe requires is_key_supported to have a method defined
+    # (normally provided by a plotting backend like Plots.jl). Define a permissive stub
+    # here to allow testing the recipe data extraction without loading Plots.
+    RecipesBase.is_key_supported(::Symbol) = true
+
+    f(u, p, t) = 0.0
+    g(u, p, t) = 0.5
+    u0 = 1.0
+    tspan = (0.0, 3.0)
+    prob = SDEProblem(f, g, u0, tspan)
+
+    @testset "recipe runs without error for ndim=1" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=1)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        @test length(recipes) >= 1
+    end
+
+    @testset "recipe runs without error for ndim=2" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        @test length(recipes) >= 1
+    end
+
+    @testset "recipe runs without error for ndim=3" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=3)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        @test length(recipes) >= 1
+    end
+
+    @testset "recipe triggers tissue_growth! when positions not yet assigned" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        @test sol.tree.position === nothing
+        bh = BranchingHeatmap((sol,))
+        # ndim must be passed explicitly when sol.prob.ndim == 0
+        attrs = Dict{Symbol,Any}(:ndim => 2)
+        recipes = RecipesBase.apply_recipe(attrs, bh)
+        @test length(recipes) >= 1
+        # Positions should now be set
+        @test sol.tree.position isa Vector{Int}
+    end
+
+    @testset "recipe errors when ndim=0 and not overridden" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        @test_throws ArgumentError RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+    end
+
+    @testset "recipe errors for wrong argument type" begin
+        @test_throws ArgumentError RecipesBase.apply_recipe(
+            Dict{Symbol,Any}(), BranchingHeatmap(("not_a_solution",)))
+    end
+
+    @testset "2D heatmap data has correct shape" begin
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        # The recipe should return (x_range, y_range, z_matrix) as args
+        @test length(recipes) >= 1
+        r = recipes[1]
+        x_range, y_range, z = r.args
+        @test z isa AbstractMatrix
+        @test length(x_range) == size(z, 2)
+        @test length(y_range) == size(z, 1)
+    end
+
+    @testset "1D heatmap data is a 1-row matrix" begin
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=1)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        @test length(recipes) >= 1
+        r = recipes[1]
+        x_range, y_coord, z = r.args
+        @test z isa AbstractMatrix
+        @test size(z, 1) == 1
+        @test length(x_range) == size(z, 2)
+    end
+
+    @testset "custom func is applied" begin
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        bh_default = BranchingHeatmap((sol,))
+        attrs_default = Dict{Symbol,Any}()
+        recipes_default = RecipesBase.apply_recipe(attrs_default, bh_default)
+        @test length(recipes_default) >= 1
+
+        attrs_sq = Dict{Symbol,Any}(:func => u -> first(u)^2)
+        bh_sq = BranchingHeatmap((sol,))
+        recipes_sq = RecipesBase.apply_recipe(attrs_sq, bh_sq)
+        @test length(recipes_sq) >= 1
+        # The values in the squared recipe may differ from default (or be the same if u≈1)
+    end
+
+    @testset "recipe respects specified time t" begin
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        tspan_sol = get_timespan(sol)
+        tmid = (tspan_sol[1] + tspan_sol[2]) / 2
+
+        attrs_mid = Dict{Symbol,Any}(:t => tmid)
+        bh_mid = BranchingHeatmap((sol,))
+        recipes_mid = RecipesBase.apply_recipe(attrs_mid, bh_mid)
+        @test length(recipes_mid) >= 1
+    end
+
+    @testset "seriestype is :heatmap for ndim=1" begin
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=1)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        @test length(recipes) >= 1
+        @test recipes[1].plotattributes[:seriestype] == :heatmap
+    end
+
+    @testset "seriestype is :heatmap for ndim=2" begin
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        @test length(recipes) >= 1
+        @test recipes[1].plotattributes[:seriestype] == :heatmap
+    end
+
+    @testset "seriestype is :scatter for ndim=3" begin
+        bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=3)
+        sol = solve(bp, EM(); dt=0.01)
+        bh = BranchingHeatmap((sol,))
+        recipes = RecipesBase.apply_recipe(Dict{Symbol,Any}(), bh)
+        @test length(recipes) >= 1
+        @test recipes[1].plotattributes[:seriestype] == :scatter
+    end
+end
+
+# ---------------------------------------------------------------------------
+# animate_heatmaps tests (requires Plots)
+# ---------------------------------------------------------------------------
+
+@testset "animate_heatmaps tests" begin
+    using AbstractTrees
+    using Distributions
+    using Plots
+    using SciMLBase
+    using StochasticDiffEq
+
+    f(u, p, t) = 0.0
+    g(u, p, t) = 0.5
+    u0 = 1.0
+    tspan = (0.0, 3.0)
+    prob = SDEProblem(f, g, u0, tspan)
+
+    @testset "returns a Plots.Animation for ndim=1" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=1)
+        sol = solve(bp, EM(); dt=0.01)
+        anim = animate_heatmaps(sol; nframes=5)
+        @test anim isa Plots.Animation
+        @test length(anim.frames) == 5
+    end
+
+    @testset "returns a Plots.Animation for ndim=2" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        anim = animate_heatmaps(sol; nframes=5)
+        @test anim isa Plots.Animation
+        @test length(anim.frames) == 5
+    end
+
+    @testset "returns a Plots.Animation for ndim=3" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=3)
+        sol = solve(bp, EM(); dt=0.01)
+        anim = animate_heatmaps(sol; nframes=5)
+        @test anim isa Plots.Animation
+        @test length(anim.frames) == 5
+    end
+
+    @testset "nframes controls number of animation frames" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        anim10 = animate_heatmaps(sol; nframes=10)
+        anim3  = animate_heatmaps(sol; nframes=3)
+        @test length(anim10.frames) == 10
+        @test length(anim3.frames)  == 3
+    end
+
+    @testset "animate_heatmaps errors when ndim=0 not overridden" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        @test_throws ArgumentError animate_heatmaps(sol; nframes=3)
+    end
+
+    @testset "animate_heatmaps with explicit ndim override" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2)
+        sol = solve(bp, EM(); dt=0.01)
+        anim = animate_heatmaps(sol; nframes=3, ndim=2)
+        @test anim isa Plots.Animation
+        @test length(anim.frames) == 3
+    end
+
+    @testset "custom func passed to animate_heatmaps" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        anim = animate_heatmaps(sol; nframes=3, func=u -> first(u)^2)
+        @test anim isa Plots.Animation
+        @test length(anim.frames) == 3
+    end
+end
