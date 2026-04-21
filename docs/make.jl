@@ -44,7 +44,8 @@ makedocs(
             "Multi-variable branching processes" => "examples/multi-variable-processes.md",
             "Ensemble simulations" => "examples/ensemble-simulation.md",
             "Tree reduction" => "examples/tree-reduction.md",
-            "Fluctuation experiment" => "examples/fluctuation-experiment.md"
+            "Fluctuation experiment" => "examples/fluctuation-experiment.md",
+            "Spatial heatmaps" => "examples/spatial-heatmap.md"
             ]    
         ]
 )
