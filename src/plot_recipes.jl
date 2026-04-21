@@ -2,6 +2,143 @@
     sol.tree
 end
 
+# ---------------------------------------------------------------------------
+# Heatmap recipe for BranchingProcessSolution
+# ---------------------------------------------------------------------------
+
+"""
+    branchingheatmap(sol; t=nothing, func=nothing, ndim=nothing)
+
+Plot a spatial heatmap of a function of the internal state of the particles alive at time
+`t` in a [`BranchingProcessSolution`](@ref), positioned at their spatial grid coordinates
+as assigned by [`tissue_growth!`](@ref).
+
+If the nodes of `sol` do not yet have spatial positions, [`tissue_growth!`](@ref) is run
+automatically using the spatial dimension configured in `sol.prob.ndim`. Pass `ndim` as a
+keyword argument to override or to use a solution created with `ndim=0`.
+
+The heatmap is 1D (single-row heatmap), 2D (standard heatmap), or a 3D coloured scatter
+plot, depending on the spatial dimension.
+
+## Arguments
+
+- `sol`: A [`BranchingProcessSolution`](@ref).
+
+## Keyword Arguments
+
+- `t=nothing`: Time at which to evaluate the heatmap. Defaults to the final time of the
+  solution.
+- `func=nothing`: Function applied to each alive particle's interpolated state vector to
+  produce the displayed scalar. Defaults to the first component for vector-valued states,
+  or the value itself for scalar states.
+- `ndim=nothing`: Override the spatial dimension (1, 2, or 3). Defaults to `sol.prob.ndim`.
+
+## Examples
+
+```julia
+using BranchingProcesses, StochasticDiffEq, Plots
+f(u, p, t) = 0.0
+g(u, p, t) = 0.5
+prob = SDEProblem(f, g, 1.0, (0.0, 3.0))
+bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+sol = solve(bp, EM(); dt=0.01)
+branchingheatmap(sol)                    # heatmap at final time
+branchingheatmap(sol; t=1.5)             # heatmap at t=1.5
+branchingheatmap(sol; func=u -> u[1]^2) # custom function
+```
+
+See also: [`tissue_growth!`](@ref), [`animate_heatmaps`](@ref)
+"""
+@userplot BranchingHeatmap
+
+@recipe function f(bh::BranchingHeatmap; t=nothing, func=nothing, ndim=nothing)
+    length(bh.args) == 1 && bh.args[1] isa BranchingProcessSolution ||
+        throw(ArgumentError("branchingheatmap requires a single BranchingProcessSolution argument"))
+
+    sol = bh.args[1]
+
+    # Determine spatial dimension
+    _ndim = ndim !== nothing ? ndim : sol.prob.ndim
+    _ndim in (1, 2, 3) || throw(ArgumentError(
+        "Spatial dimension must be 1, 2, or 3. Configured ndim=$(_ndim). " *
+        "Either set ndim in ConstantRateBranchingProblem or pass ndim as a keyword argument."))
+
+    # Ensure spatial positions have been assigned
+    if sol.tree.position === nothing
+        tissue_growth!(sol.tree, _ndim)
+    end
+
+    # Collect all nodes once
+    all_nodes = collect(PreOrderDFS(sol.tree))
+
+    # Determine plot time (default: final time of solution)
+    _t = t !== nothing ? Float64(t) : maximum(node.sol.t[end] for node in all_nodes)
+
+    # Default function: extract first component (works for both scalar and vector states)
+    _func = func !== nothing ? func : u -> (u isa AbstractArray ? first(u) : u)
+
+    # Get alive nodes at time _t
+    alive = [node for node in all_nodes
+             if node.sol.t[1] <= _t <= node.sol.t[end]]
+
+    isempty(alive) && throw(ArgumentError("No particles alive at time t=$(_t)"))
+
+    # Extract positions and scalar function values
+    positions = [node.position for node in alive]
+    values = Float64[_func(node.sol(_t)) for node in alive]
+
+    # Common attributes
+    legend --> false
+    title --> "t = $(round(_t; digits=3))"
+    colorbar --> true
+
+    if _ndim == 1
+        x_vals = [p[1] for p in positions]
+        x_min, x_max = minimum(x_vals), maximum(x_vals)
+        x_range = x_min:x_max
+        z = fill(NaN, 1, length(x_range))
+        for (p, v) in zip(x_vals, values)
+            z[1, p - x_min + 1] = v
+        end
+        seriestype := :heatmap
+        xlabel --> "x"
+        yticks --> false
+        yaxis --> false
+        collect(x_range), [0], z
+
+    elseif _ndim == 2
+        x_vals = [p[1] for p in positions]
+        y_vals = [p[2] for p in positions]
+        x_min, x_max = minimum(x_vals), maximum(x_vals)
+        y_min, y_max = minimum(y_vals), maximum(y_vals)
+        x_range = x_min:x_max
+        y_range = y_min:y_max
+        z = fill(NaN, length(y_range), length(x_range))
+        for (pos, v) in zip(positions, values)
+            xi = pos[1] - x_min + 1
+            yi = pos[2] - y_min + 1
+            z[yi, xi] = v
+        end
+        seriestype := :heatmap
+        xlabel --> "x"
+        ylabel --> "y"
+        collect(x_range), collect(y_range), z
+
+    else  # _ndim == 3
+        x_vals = [p[1] for p in positions]
+        y_vals = [p[2] for p in positions]
+        z_pos  = [p[3] for p in positions]
+        seriestype := :scatter
+        marker_z := values
+        markersize --> 4
+        markerstrokewidth --> 0
+        xlabel --> "x"
+        ylabel --> "y"
+        zlabel --> "z"
+        x_vals, y_vals, z_pos
+    end
+end
+
 @recipe function f(tree::T; branchpoints=false, idxs=[1], colorscheme=ColorSchemes.RdYlBu) where T <: BranchingProcessNode
     # set a default value for some attributes
     xlabel --> "t"

@@ -15,6 +15,12 @@ RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 SciMLBase = "0bca4576-84f4-4d90-8ffe-ffa030f20462"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
+[weakdeps]
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+
+[extensions]
+BranchingProcessesPlotsExt = "Plots"
+
 [compat]
 AbstractTrees = "0.4"
 ColorSchemes = "3.31.0"
@@ -22,18 +28,20 @@ Distributions = "0.25"
 DocStringExtensions = "0.9"
 JumpProcesses = "9.22.0"
 LinearAlgebra = "1"
+Plots = "1"
 RecipesBase = "1"
 RecursiveArrayTools = "3, 4"
 SciMLBase = "2, 3"
 Statistics = "1"
 StochasticDiffEq = "6"
-julia = "1.6"
+julia = "1.9"
 
 [extras]
 JumpProcesses = "ccbc3e58-028d-4f4c-8cd5-9ae44345cda5"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 RecursiveArrayTools = "731186ca-8d62-57ce-b412-fbd966d074cd"
 StochasticDiffEq = "789caeaf-c7a9-5a7d-9973-96adeb23e2a0"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["JumpProcesses", "RecursiveArrayTools", "StochasticDiffEq", "Test"]
+test = ["JumpProcesses", "Plots", "RecursiveArrayTools", "StochasticDiffEq", "Test"]
