@@ -5,8 +5,8 @@ CurrentModule = BranchingProcesses
 # Plot recipes
 
 ```@docs
-BranchingHeatmap
 branchingheatmap
+BranchingHeatmap
 branchingheatmap!
 animate_heatmaps
 ```

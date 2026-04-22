@@ -51,6 +51,17 @@ See also: [`tissue_growth!`](@ref), [`animate_heatmaps`](@ref)
 """
 @userplot BranchingHeatmap
 
+@doc """
+    BranchingHeatmap
+
+User plot type backing [`branchingheatmap`](@ref).
+
+Construct this plot type indirectly via [`branchingheatmap`](@ref) rather than by calling
+`BranchingHeatmap` directly.
+
+See also: [`branchingheatmap`](@ref)
+""" BranchingHeatmap
+
 @recipe function f(bh::BranchingHeatmap; time=nothing, func=nothing, ndim=nothing)
     length(bh.args) == 1 && bh.args[1] isa BranchingProcessSolution ||
         throw(ArgumentError("branchingheatmap requires a single BranchingProcessSolution argument"))
