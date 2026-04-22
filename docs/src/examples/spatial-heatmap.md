@@ -11,13 +11,13 @@ The [`branchingheatmap`](@ref) function visualises the internal state of all par
 Define a simple scalar SDE (constant drift zero, diffusion coefficient 0.5) and wrap it in a [`ConstantRateBranchingProblem`](@ref) with a 2-D spatial layout:
 
 ```@example heatmap
-using BranchingProcesses, StochasticDiffEq, Plots
+using BranchingProcesses, DifferentialEquations, Plots
 using Random # hide
 Random.seed!(42) # hide
 
 f(u, p, t) = 0.0
 g(u, p, t) = 0.5
-prob = SDEProblem(f, g, 1.0, (0.0, 3.0))
+prob = SDEProblem(f, g, 1.0, (0.0, 7.0))
 
 bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
 sol = solve(bp, EM(); dt=0.01);
@@ -32,10 +32,10 @@ nothing # hide
 branchingheatmap(sol)
 ```
 
-Pass `t` to inspect the tissue at an earlier point in time:
+Pass `time` to inspect the tissue at an earlier point in time:
 
 ```@example heatmap
-branchingheatmap(sol; t=1.5)
+branchingheatmap(sol; time=1.5)
 ```
 
 A custom scalar function can be applied to each particle's interpolated state vector via the `func` keyword argument:

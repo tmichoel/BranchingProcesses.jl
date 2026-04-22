@@ -24,7 +24,7 @@ function BranchingProcesses.animate_heatmaps(sol::BranchingProcessSolution;
 
     anim = Plots.Animation()
     for t in times
-        branchingheatmap(sol; t=t, func=func, ndim=_ndim, kwargs...)
+        branchingheatmap(sol; time=t, func=func, ndim=_ndim, kwargs...)
         Plots.frame(anim)
     end
 

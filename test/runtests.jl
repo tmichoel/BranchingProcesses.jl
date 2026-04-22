@@ -990,13 +990,13 @@ end
         @test all(isapprox(2v1, v2; atol=1e-10) for (v1, v2) in zip(default_vals, double_vals))
     end
 
-    @testset "recipe respects specified time t" begin
+    @testset "recipe respects specified time" begin
         bp = ConstantRateBranchingProblem(prob, Dirac(0.5), 2; ndim=2)
         sol = solve(bp, EM(); dt=0.01)
         tspan_sol = get_timespan(sol)
         tmid = (tspan_sol[1] + tspan_sol[2]) / 2
 
-        attrs_mid = Dict{Symbol,Any}(:t => tmid)
+        attrs_mid = Dict{Symbol,Any}(:time => tmid)
         bh_mid = BranchingHeatmap((sol,))
         recipes_mid = RecipesBase.apply_recipe(attrs_mid, bh_mid)
         @test length(recipes_mid) >= 1
@@ -1100,5 +1100,16 @@ end
         anim = animate_heatmaps(sol; nframes=3, func=u -> u^2)
         @test anim isa Plots.Animation
         @test length(anim.frames) == 3
+    end
+
+    @testset "branchingheatmap accepts time keyword through Plots" begin
+        bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+        sol = solve(bp, EM(); dt=0.01)
+        tspan_sol = get_timespan(sol)
+        tmid = (tspan_sol[1] + tspan_sol[2]) / 2
+
+        plt = branchingheatmap(sol; time=tmid)
+        @test plt isa Plots.Plot
+        @test occursin("$(round(Float64(tmid); digits=3))", string(plt.subplots[1][:title]))
     end
 end

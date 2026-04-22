@@ -7,10 +7,10 @@ end
 # ---------------------------------------------------------------------------
 
 """
-    branchingheatmap(sol; t=nothing, func=nothing, ndim=nothing)
+    branchingheatmap(sol; time=nothing, func=nothing, ndim=nothing)
 
-Plot a spatial heatmap of a function of the internal state of the particles alive at time
-`t` in a [`BranchingProcessSolution`](@ref), positioned at their spatial grid coordinates
+Plot a spatial heatmap of a function of the internal state of the particles alive at
+`time` in a [`BranchingProcessSolution`](@ref), positioned at their spatial grid coordinates
 as assigned by [`tissue_growth!`](@ref).
 
 If the nodes of `sol` do not yet have spatial positions, [`tissue_growth!`](@ref) is run
@@ -26,7 +26,7 @@ plot, depending on the spatial dimension.
 
 ## Keyword Arguments
 
-- `t=nothing`: Time at which to evaluate the heatmap. Defaults to the final time of the
+- `time=nothing`: Time at which to evaluate the heatmap. Defaults to the final time of the
   solution.
 - `func=nothing`: Function applied to each alive particle's interpolated state vector to
   produce the displayed scalar. Defaults to the first component for vector-valued states,
@@ -43,7 +43,7 @@ prob = SDEProblem(f, g, 1.0, (0.0, 3.0))
 bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
 sol = solve(bp, EM(); dt=0.01)
 branchingheatmap(sol)                    # heatmap at final time
-branchingheatmap(sol; t=1.5)             # heatmap at t=1.5
+branchingheatmap(sol; time=1.5)          # heatmap at t=1.5
 branchingheatmap(sol; func=u -> u[1]^2) # custom function
 ```
 
@@ -51,7 +51,7 @@ See also: [`tissue_growth!`](@ref), [`animate_heatmaps`](@ref)
 """
 @userplot BranchingHeatmap
 
-@recipe function f(bh::BranchingHeatmap; t=nothing, func=nothing, ndim=nothing)
+@recipe function f(bh::BranchingHeatmap; time=nothing, func=nothing, ndim=nothing)
     length(bh.args) == 1 && bh.args[1] isa BranchingProcessSolution ||
         throw(ArgumentError("branchingheatmap requires a single BranchingProcessSolution argument"))
 
@@ -72,7 +72,7 @@ See also: [`tissue_growth!`](@ref), [`animate_heatmaps`](@ref)
     all_nodes = collect(PreOrderDFS(sol.tree))
 
     # Determine plot time (default: final time of solution)
-    _t = t !== nothing ? Float64(t) : maximum(node.sol.t[end] for node in all_nodes)
+    _t = time !== nothing ? Float64(time) : maximum(node.sol.t[end] for node in all_nodes)
 
     # Default function: extract first component (works for both scalar and vector states)
     _func = func !== nothing ? func : u -> (u isa AbstractArray ? first(u) : u)
