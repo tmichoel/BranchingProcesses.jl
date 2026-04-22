@@ -36,6 +36,8 @@ makedocs(
         "Types" => "types.md",
         "Utilities" => "utils.md",
         "Spatial growth" => "spatial.md",
+        "Plot recipes" => "plotting.md",
+        "List of functions" => "functions.md",
         "Examples" => [
             "Branching Brownian motion" => "examples/branching-brownian-motion.md",
             "Branching Ornstein-Uhlenbeck process" => "examples/branching-oup.md",
