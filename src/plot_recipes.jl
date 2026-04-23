@@ -103,6 +103,18 @@ See also: [`branchingheatmap`](@ref)
     title --> "t = $(round(_t; digits=3))"
     colorbar --> true
 
+    # Choose colormap and color limits based on the sign of the values
+    vmin, vmax = minimum(values), maximum(values)
+    if vmin < 0 && vmax > 0
+        # Mixed sign: use a symmetric range with a diverging three-color colormap
+        maxabs = max(abs(vmin), abs(vmax))
+        clims --> (-maxabs, maxabs)
+        color --> :bwr
+    else
+        # One-sided values: use a sequential two-color colormap
+        color --> :viridis
+    end
+
     if _ndim == 1
         x_vals = [p[1] for p in positions]
         x_min, x_max = minimum(x_vals), maximum(x_vals)
@@ -131,6 +143,7 @@ See also: [`branchingheatmap`](@ref)
             z[yi, xi] = v
         end
         seriestype := :heatmap
+        aspect_ratio --> 1
         xlabel --> "x"
         ylabel --> "y"
         collect(x_range), collect(y_range), z
