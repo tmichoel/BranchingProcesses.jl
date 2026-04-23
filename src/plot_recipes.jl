@@ -62,7 +62,8 @@ Construct this plot type indirectly via [`branchingheatmap`](@ref) rather than b
 See also: [`branchingheatmap`](@ref)
 """ BranchingHeatmap
 
-@recipe function f(bh::BranchingHeatmap; time=nothing, func=nothing, ndim=nothing)
+@recipe function f(bh::BranchingHeatmap; time=nothing, func=nothing, ndim=nothing,
+                   values_range=nothing, grid_xlims=nothing, grid_ylims=nothing)
     length(bh.args) == 1 && bh.args[1] isa BranchingProcessSolution ||
         throw(ArgumentError("branchingheatmap requires a single BranchingProcessSolution argument"))
 
@@ -102,10 +103,13 @@ See also: [`branchingheatmap`](@ref)
     legend --> false
     title --> "t = $(round(_t; digits=3))"
     colorbar --> true
+    if values_range !== nothing
+        clims --> values_range
+    end
 
     if _ndim == 1
         x_vals = [p[1] for p in positions]
-        x_min, x_max = minimum(x_vals), maximum(x_vals)
+        x_min, x_max = grid_xlims !== nothing ? grid_xlims : (minimum(x_vals), maximum(x_vals))
         x_range = x_min:x_max
         z = fill(NaN, 1, length(x_range))
         for (p, v) in zip(x_vals, values)
@@ -120,8 +124,8 @@ See also: [`branchingheatmap`](@ref)
     elseif _ndim == 2
         x_vals = [p[1] for p in positions]
         y_vals = [p[2] for p in positions]
-        x_min, x_max = minimum(x_vals), maximum(x_vals)
-        y_min, y_max = minimum(y_vals), maximum(y_vals)
+        x_min, x_max = grid_xlims !== nothing ? grid_xlims : (minimum(x_vals), maximum(x_vals))
+        y_min, y_max = grid_ylims !== nothing ? grid_ylims : (minimum(y_vals), maximum(y_vals))
         x_range = x_min:x_max
         y_range = y_min:y_max
         z = fill(NaN, length(y_range), length(x_range))
