@@ -31,11 +31,13 @@ function BranchingProcesses.animate_heatmaps(sol::BranchingProcessSolution;
 
     # Determine common value range from all nodes across their full trajectories
     all_values = Float64[_func(u) for node in all_nodes for u in node.sol.u]
+    isempty(all_values) && throw(ArgumentError("No particle trajectory values found in solution"))
     values_range = (minimum(all_values), maximum(all_values))
 
     # Determine grid position range from the final frame
     alive_final = [node for node in all_nodes
                    if node.sol.t[1] <= tstop <= node.sol.t[end]]
+    isempty(alive_final) && throw(ArgumentError("No particles alive at final time t=$tstop"))
     final_positions = [node.position for node in alive_final]
 
     if _ndim == 1
