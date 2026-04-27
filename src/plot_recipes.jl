@@ -95,9 +95,17 @@ See also: [`branchingheatmap`](@ref)
 
     isempty(alive) && throw(ArgumentError("No particles alive at time t=$(_t)"))
 
-    # Extract positions and scalar function values
-    positions = [node.position for node in alive]
-    values = Float64[_func(node.sol(_t)) for node in alive]
+    # Extract positions using time-indexed history and scalar function values
+    positions = Vector{Int}[]
+    values = Float64[]
+    for node in alive
+        pos = tissue_position(node, _t)
+        pos === nothing && continue
+        push!(positions, pos)
+        push!(values, _func(node.sol(_t)))
+    end
+
+    isempty(positions) && throw(ArgumentError("No particles with known positions alive at time t=$(_t)"))
 
     # Common attributes
     legend --> false

@@ -1113,3 +1113,92 @@ end
         @test occursin("$(round(Float64(tmid); digits=3))", string(plt.subplots[1][:title]))
     end
 end
+
+@testset "Time-consistent spatial layout (tissue_position)" begin
+    using Random
+    using StochasticDiffEq
+    using AbstractTrees
+
+    # -----------------------------------------------------------------------
+    # Repro scenario from the issue: seed=42, ndim=2
+    # At t=2.1 there should be alive nodes whose time-indexed positions
+    # are all mutually adjacent (Moore neighbourhood) — no isolated far-away cell.
+    # -----------------------------------------------------------------------
+    Random.seed!(42)
+
+    f(u, p, t) = 0.0
+    g(u, p, t) = 0.5
+    prob = SDEProblem(f, g, 1.0, (0.0, 7.0))
+
+    bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+    sol = solve(bp, EM(); dt=0.01)
+
+    query_t = 2.1
+
+    # Collect alive nodes at query_t
+    all_nodes = collect(PreOrderDFS(sol.tree))
+    alive = [n for n in all_nodes if n.sol.t[1] <= query_t <= n.sol.t[end]]
+
+    @test !isempty(alive)
+
+    # Every alive node must have a position_history (populated by tissue_growth!)
+    @test all(n -> n.position_history !== nothing, all_nodes)
+    # Every node's history must be non-empty (at least the birth placement was recorded)
+    @test all(n -> !isempty(n.position_history), all_nodes)
+
+    # Retrieve time-indexed positions
+    positions = [tissue_position(n, query_t) for n in alive]
+    @test all(p -> p !== nothing, positions)
+
+    # All positions must be distinct (no two cells in the same slot)
+    @test length(unique(positions)) == length(positions)
+
+    # Adjacency property: every alive cell must have at least one Moore-neighbour
+    # among the other alive cells at query_t.
+    pos_set = Set(Tuple(p) for p in positions)
+    for pos in positions
+        x, y = pos
+        has_neighbour = any(
+            (x + dx, y + dy) in pos_set
+            for dx in -1:1 for dy in -1:1
+            if !(dx == 0 && dy == 0)
+        )
+        @test has_neighbour
+    end
+
+    # -----------------------------------------------------------------------
+    # Sanity check: tissue_position falls back to node.position when
+    # position_history is nothing (backward-compatibility path).
+    # -----------------------------------------------------------------------
+    @testset "tissue_position fallback" begin
+        f2(u, p, t) = 0.0
+        g2(u, p, t) = 1.0
+        prob2 = SDEProblem(f2, g2, 1.0, (0.0, 2.0))
+        bp2 = ConstantRateBranchingProblem(prob2, 1.0, 2)
+        tree2 = BranchingProcesses.solve_and_split(bp2, EM(); dt=0.01)
+        # Manually set position without history
+        tree2.position = [3, 5]
+        tree2.position_history = nothing
+        @test tissue_position(tree2, 0.5) == [3, 5]
+    end
+
+    # -----------------------------------------------------------------------
+    # Sanity check: tissue_position returns nothing before first recorded time.
+    # -----------------------------------------------------------------------
+    @testset "tissue_position before birth" begin
+        f3(u, p, t) = 0.0
+        g3(u, p, t) = 1.0
+        prob3 = SDEProblem(f3, g3, 1.0, (0.0, 2.0))
+        bp3 = ConstantRateBranchingProblem(prob3, 1.0, 2)
+        tree3 = BranchingProcesses.solve_and_split(bp3, EM(); dt=0.01)
+        # A history with a single entry recorded at t=1.0
+        tree3.position_history = [(1.0, [0, 0])]
+        @test tissue_position(tree3, 0.5) === nothing   # before first recorded time
+        @test tissue_position(tree3, 1.0) == [0, 0]    # exactly at recorded time
+        @test tissue_position(tree3, 2.0) == [0, 0]    # after recorded time, same position
+        # Empty history falls back to node.position
+        tree3.position_history = Tuple{Float64, Vector{Int}}[]
+        tree3.position = [7, 3]
+        @test tissue_position(tree3, 1.0) == [7, 3]
+    end
+end
