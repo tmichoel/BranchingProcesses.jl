@@ -108,7 +108,7 @@ See also: [`branchingheatmap`](@ref)
     end
 
     # Choose colormap and color limits based on the sign of the values
-    vmin, vmax = minimum(values), maximum(values)
+    vmin, vmax = values_range !== nothing ? (values_range[1], values_range[2]) : (minimum(values), maximum(values))
     if vmin < 0 && vmax > 0
         # Mixed sign: use a symmetric range with a diverging three-color colormap
         maxabs = max(abs(vmin), abs(vmax))
