@@ -81,11 +81,13 @@ mutable struct BranchingProcessNode{T<:SciMLBase.AbstractSciMLSolution}
     sol::T
     """A vector of child nodes representing offspring particles."""
     children::Vector{BranchingProcessNode{T}}
-    """Spatial grid position of this particle, assigned by [`tissue_growth!`](@ref). `nothing` if no spatial algorithm has been run. The `mutable struct` design is required to support in-place position updates when cells are pushed during tissue growth."""
+    """Spatial grid position of this particle, assigned by [`tissue_growth!`](@ref). `nothing` if no spatial algorithm has been run. Stores the *final* position after all divisions have been processed; use [`tissue_position`](@ref) to query the position at a specific time."""
     position::Union{Nothing, Vector{Int}}
+    """Time-indexed position history recorded by [`tissue_growth!`](@ref). Each entry is a `(time, position)` pair; entries are sorted in ascending time order. `nothing` if [`tissue_growth!`](@ref) has not been run. Use [`tissue_position`](@ref) to query the position at a specific time."""
+    position_history::Union{Nothing, Vector{Tuple{Float64, Vector{Int}}}}
 
     function BranchingProcessNode(sol::T, children::Vector{BranchingProcessNode{T}}) where T<:SciMLBase.AbstractSciMLSolution
-        new{T}(sol, children, nothing)
+        new{T}(sol, children, nothing, nothing)
     end
 end
 
