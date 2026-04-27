@@ -1143,6 +1143,8 @@ end
 
     # Every alive node must have a position_history (populated by tissue_growth!)
     @test all(n -> n.position_history !== nothing, all_nodes)
+    # Every node's history must be non-empty (at least the birth placement was recorded)
+    @test all(n -> !isempty(n.position_history), all_nodes)
 
     # Retrieve time-indexed positions
     positions = [tissue_position(n, query_t) for n in alive]
@@ -1189,9 +1191,14 @@ end
         prob3 = SDEProblem(f3, g3, 1.0, (0.0, 2.0))
         bp3 = ConstantRateBranchingProblem(prob3, 1.0, 2)
         tree3 = BranchingProcesses.solve_and_split(bp3, EM(); dt=0.01)
+        # A history with a single entry recorded at t=1.0
         tree3.position_history = [(1.0, [0, 0])]
-        @test tissue_position(tree3, 0.5) === nothing
-        @test tissue_position(tree3, 1.0) == [0, 0]
-        @test tissue_position(tree3, 2.0) == [0, 0]
+        @test tissue_position(tree3, 0.5) === nothing   # before first recorded time
+        @test tissue_position(tree3, 1.0) == [0, 0]    # exactly at recorded time
+        @test tissue_position(tree3, 2.0) == [0, 0]    # after recorded time, same position
+        # Empty history falls back to node.position
+        tree3.position_history = Tuple{Float64, Vector{Int}}[]
+        tree3.position = [7, 3]
+        @test tissue_position(tree3, 1.0) == [7, 3]
     end
 end

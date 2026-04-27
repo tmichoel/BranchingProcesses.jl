@@ -207,15 +207,19 @@ function tissue_position(node::BranchingProcessNode, t::Real)
     # Fall back to the static position field when no history is available.
     node.position_history === nothing && return node.position
     hist = node.position_history
-    isempty(hist) && return nothing
+    # Fall back to static position when history is empty (defensive; should not occur
+    # after tissue_growth! has run).
+    isempty(hist) && return node.position
     _t = Float64(t)
-    # Scan forward (history is chronologically ordered) and keep the latest entry ≤ _t.
-    result = nothing
-    for (time, pos) in hist
-        time <= _t || break
-        result = pos
+    # Return nothing if queried before the node's first recorded position (before birth).
+    hist[1][1] > _t && return nothing
+    # Binary search for the last entry with timestamp ≤ _t (history is chronologically sorted).
+    lo, hi = 1, length(hist)
+    while lo < hi
+        mid = (lo + hi + 1) >> 1
+        hist[mid][1] <= _t ? (lo = mid) : (hi = mid - 1)
     end
-    return result
+    return hist[lo][2]
 end
 
 # ---------------------------------------------------------------------------
