@@ -6,4 +6,5 @@ CurrentModule = BranchingProcesses
 
 ```@docs
 tissue_growth!
+tissue_position
 ```
