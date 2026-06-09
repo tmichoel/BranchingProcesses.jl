@@ -26,7 +26,7 @@ nothing # hide
 We set up the corresponding [`JumpProblem`](https://docs.sciml.ai/JumpProcesses/stable/) and wrap it in a [`ConstantRateBranchingProblem`](@ref):
 
 ```@example fe
-using DifferentialEquations, JumpProcesses
+using StochasticDiffEq, JumpProcesses
 jprob  = JumpProblem(rn, u0, tspan, p)
 
 using BranchingProcesses

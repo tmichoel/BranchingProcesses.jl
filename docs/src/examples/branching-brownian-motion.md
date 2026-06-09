@@ -17,7 +17,7 @@ In [SciML](https://docs.sciml.ai/Overview/stable/), a "[problem](https://docs.sc
 For BBM, the single-particle dynamics is Brownian motion, or more precisely, the [Wiener process](https://en.wikipedia.org/wiki/Wiener_process). It is defined in a distributionally exact manner in the [DiffEqNoiseProcess](https://docs.sciml.ai/DiffEqNoiseProcess/stable/) package, but for now the [`BranchingProcesses`](@ref) package only supports [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/) or [`JumpProblem`](https://docs.sciml.ai/JumpProcesses/stable/jump_types/#defining_jump_problem) types. Hence we define the Wiener process as the [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/):
 
 ```@example bbm
-using DifferentialEquations
+using StochasticDiffEq
 f(u,p,t) = 0.0
 g(u,p,t) = 1.0
 u0 = 0.0

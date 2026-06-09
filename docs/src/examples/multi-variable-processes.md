@@ -19,7 +19,7 @@ end
 We set up a single-cell process (with four variables, ``S``. ``E``. ``SE``. and ``P``) as in the [model library](https://docs.sciml.ai/Catalyst/stable/model_creation/examples/basic_CRN_library/#basic_CRN_library_mm):
 
 ```@example mm
-using DifferentialEquations, JumpProcesses
+using StochasticDiffEq, JumpProcesses
 u0 = [:S => 30, :E => 10, :SE => 0, :P => 0]
 tspan = (0., 100.)
 ps = [:kB => 0.00166, :kD => 0.0001, :kP => 0.1]

@@ -14,7 +14,7 @@ Let's model the actual [Luria-Delbrück experiment](https://en.wikipedia.org/wik
 
 
 ```@example ensemble
-using DifferentialEquations, JumpProcesses, Catalyst
+using StochasticDiffEq, JumpProcesses, Catalyst
 rn = @reaction_network begin
     μ, W --> M
 end
@@ -49,9 +49,9 @@ ensemble_sol = solve(ensemble_bjprob, SSAStepper(), EnsembleThreads(), trajector
 We can obtain the number of cells and the number of mutants in each clone using the [`tip_values`](@ref) function:
 
 ```@example ensemble
-cell_counts = [sum(tip_values(sol)) for sol in ensemble_sol];
+cell_counts = [sum(tip_values(sol)) for sol in ensemble_sol.u];
 total_cell_counts = [sum(x) for x in cell_counts];
-mutant_cell_counts = [x[2] for x in cell_counts];
+#mutant_cell_counts = [x[2] for x in cell_counts];
 nothing # hide
 ```
 
@@ -61,5 +61,5 @@ histogram(total_cell_counts,label="",xlabel="Total cell counts", ylabel="Number 
 ```
 
 ```@example ensemble
-histogram(mutant_cell_counts,label="",xlabel="Mutant cell counts", ylabel="Number of clones")
+#histogram(mutant_cell_counts,label="",xlabel="Mutant cell counts", ylabel="Number of clones")
 ```

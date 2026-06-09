@@ -8,7 +8,7 @@ using BranchingProcesses
 
 using AbstractTrees
 using Catalyst
-using DifferentialEquations
+using StochasticDiffEq
 using Distributions
 using JumpProcesses
 using LaTeXStrings

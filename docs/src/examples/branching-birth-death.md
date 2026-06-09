@@ -25,7 +25,7 @@ where `kp` and `kd` are the parameters of the model, respectively the production
 As explained in the [Catalyst tutorials](https://docs.sciml.ai/Catalyst/stable/introduction_to_catalyst/catalyst_for_new_julia_users/), we can define a [JumpProcess](https://docs.sciml.ai/JumpProcesses/stable/) to simulate this reaction network as follows:
 
 ```@example bd
-using DifferentialEquations, JumpProcesses
+using StochasticDiffEq, JumpProcesses
 u0 = [:X => 200]
 tspan = (0.0, 3.0)
 p = [:kp => 50.0, :kd => 0.25]

@@ -11,7 +11,7 @@ A [`BranchingProcessSolution`](@ref) is an [AbstractTrees](https://juliacollecti
 Useful tree statistics can be obtained directly from the [AbstractTrees](https://juliacollections.github.io/AbstractTrees.jl/) interface. To illustrate this, consider the example of [branching Brownian motion](branching-brownian-motion.md):
 
 ```@example bbm
-using DifferentialEquations, BranchingProcesses
+using StochasticDiffEq, BranchingProcesses
 f(u,p,t) = 0.0
 g(u,p,t) = 1.0
 u0 = 0.0

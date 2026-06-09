@@ -24,7 +24,7 @@ If ``X_t`` represents the [expression level of a gene](https://en.wikipedia.org/
 Similar to the [branching Brownian motion tutorial](./branching-brownian-motion.md), we cannot (yet) use the distributionally exact [OUP implementation](https://docs.sciml.ai/DiffEqNoiseProcess/stable/noise_processes/#DiffEqNoiseProcess.OrnsteinUhlenbeckProcess) from the [DiffEqNoiseProcess](https://docs.sciml.ai/DiffEqNoiseProcess/stable/) package, but must define the OUP as a [`SDEProblem`](https://docs.sciml.ai/DiffEqDocs/stable/types/sde_types/):
 
 ```@example oup
-using DifferentialEquations
+using StochasticDiffEq
 f(u,p,t) = p[2]*(p[1]-u)
 g(u,p,t) = p[3]
 u0 = 0.0

@@ -17,7 +17,7 @@ rn = @reaction_network begin
     kd, X --> 0
 end
 
-using DifferentialEquations, JumpProcesses
+using StochasticDiffEq, JumpProcesses
 u0 = [:X => 200]
 tspan = (0.0, 3.0)
 p = [:kp => 50.0, :kd => 0.25]
