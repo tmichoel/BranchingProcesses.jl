@@ -352,7 +352,7 @@ function fluctuation_experiment(bp::ConstantRateBranchingProblem,
                                 solver_kwargs=NamedTuple(),
                                 reduce_kwargs=NamedTuple(),
                                 rescale=nothing)
-    prob_func = (prob, i, _) -> remake(prob, u0=rand(u0_dist))
+    prob_func = (prob, i) -> remake(prob, u0=rand(u0_dist))
     ep = EnsembleProblem(bp; prob_func=prob_func)
     results = solve(ep, alg, ensemble_alg; trajectories=nclone, reduction=reduction, reduce_kwargs..., solver_kwargs...)
     if rescale !== nothing
