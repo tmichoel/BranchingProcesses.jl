@@ -62,7 +62,7 @@ nothing # hide
 
 ```@example fe
 using Plots
-plot(results[1])
+plot(results.u[1])
 ```
 
 ## Visualising the distribution across clones
@@ -70,7 +70,7 @@ plot(results[1])
 The main interest in a fluctuation experiment is the *distribution* of a quantity across clones at the end of the experiment. We extract the number of mutant cells (`M`, index 2) at the final time for each clone:
 
 ```@example fe
-mutant_counts = [sol.u[end][2] for sol in results]
+mutant_counts = [sol.u[end][2] for sol in results.u]
 histogram(mutant_counts; #bins=0:maximum(mutant_counts)+1,
           xlabel="Mutant cell count", ylabel="Number of clones",
           label="", title="Luria-Delbrück distribution")
@@ -78,55 +78,48 @@ histogram(mutant_counts; #bins=0:maximum(mutant_counts)+1,
 
 The characteristic feature of the Luria-Delbrück distribution is its heavy tail: most clones have few or no mutants, while a small number of "jackpot" clones carry many mutants due to early mutations.
 
-## Using a non-trivial initial-state distribution
+## A custom reduction and rescaling function
 
-[`fluctuation_experiment`](@ref) shines when the initial condition itself varies across clones. As a second example we use the [branching Ornstein-Uhlenbeck process](./branching-oup.md) and draw each clone's initial state from a normal distribution:
+By default [`fluctuation_experiment`](@ref) uses `sum` to aggregate cell values at each time point, but any callable is accepted. For instance, to track the maximum value across independent realizations of a [branching Brownian motion](./branching-brownian-motion.md) with initial states sampled ranomdly from a standard normal:
+
 
 ```@example fe
-f(u,p,t) = p[2]*(p[1]-u)
-g(u,p,t) = p[3]
-μ_ou = 2.0; α = 5.0; σ = 0.5
-oup = SDEProblem(f, g, μ_ou, (0.0, 5.0), (μ_ou, α, σ))
-boup = ConstantRateBranchingProblem(oup, 1.0, 2)
+f(u,p,t) = 0.0
+g(u,p,t) = 1.0
 
-u0_dist_ou = Normal(0.0, 1.0)  # clones start away from the OUP steady state
+bm = SDEProblem(f, g, 0.0, (0.0, 5.0))
+bbm = ConstantRateBranchingProblem(bm, λ, 2)
+
+u0_dist = Normal(0.0, 1.0) 
 nothing # hide
 ```
 
 ```@example fe
 Random.seed!(42) # hide
-results_ou = fluctuation_experiment(boup, u0_dist_ou, 20;
-                                    alg=EM(), solver_kwargs=(; dt=0.01),
-                                    reduce_kwargs=(; dt=0.01),
-                                    ensemble_alg=EnsembleSerial());
-nothing # hide
-```
-
-Plot the reduced (summed) time series for all 20 clones together:
-
-```@example fe
-plt = plot(; xlabel="t", ylabel="sum of cells", legend=false)
-for sol in results_ou
-    plot!(plt, sol)
-end
-plt
-```
-
-Each clone starts from a different initial state and, because the equilibration rate `α` is fast relative to the branching rate `λ`, the population quickly relaxes towards the steady-state value ``\mu = 2.0``.
-
-## A custom reduction function
-
-By default [`fluctuation_experiment`](@ref) uses `sum` to aggregate cell values at each time point, but any callable is accepted. For instance, to track the maximum value across all live cells in each clone:
-
-```@example fe
-Random.seed!(42) # hide
-results_max = fluctuation_experiment(boup, u0_dist_ou, 20;
+results_max = fluctuation_experiment(bbm, u0_dist, 20;
                                      alg=EM(), solver_kwargs=(; dt=0.01),
                                      reduction=maximum,
                                      ensemble_alg=EnsembleThreads());
 plt2 = plot(; xlabel="t", ylabel="max over cells", legend=false)
-for sol in results_max
+for sol in results_max.u
     plot!(plt2, sol)
 end
 plt2
+```
+
+The reduction function is by definition the same at all time points. Time-dependency can be introduced by scaling each clone's reduced solution by a time-dependent factor. For instance, to rescale the maximum value in the previous experiment by the square root of the expected number of particles ``e^{\lambda t}``:
+
+```@example fe
+Random.seed!(42) # hide
+rescale_fun = t -> exp(-0.5*λ*t)
+results_max_scaled = fluctuation_experiment(bbm, u0_dist, 20;
+                                     alg=EM(), solver_kwargs=(; dt=0.01),
+                                     reduction=maximum,
+                                     rescale=rescale_fun,
+                                     ensemble_alg=EnsembleThreads());
+plt3 = plot(; xlabel="t", ylabel="rescaled max over cells", legend=false)
+for sol in results_max_scaled.u
+    plot!(plt3, sol)
+end
+plt3
 ```

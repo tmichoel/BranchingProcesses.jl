@@ -11,7 +11,7 @@ The [`branchingheatmap`](@ref) function visualises the internal state of all par
 Define a simple scalar SDE (constant drift zero, diffusion coefficient 0.5) and wrap it in a [`ConstantRateBranchingProblem`](@ref) with a 2-D spatial layout:
 
 ```@example heatmap
-using BranchingProcesses, DifferentialEquations, Plots
+using BranchingProcesses, StochasticDiffEq, Plots
 using Random # hide
 Random.seed!(42) # hide
 

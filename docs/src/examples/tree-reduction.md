@@ -132,12 +132,3 @@ Transformations can also be used to create summaries of summaries, for instance,
 sol_red = reduce_tree(sol; dt=0.1, transform=(x -> sum(x)));
 plot(sol_red)
 ```
-
-## Tree reduction and ensemble simulations
-
-Tree reduction is particularly useful in the context of [ensemble simulations](./ensemble-simulation.md).
-
-```example tr
-ensemble_bjprob = EnsembleProblem(bjprob)
-ensemble_tree = solve(ensemble_bjprob, SSAStepper(), EnsembleThreads(), trajectories=100)
-```
