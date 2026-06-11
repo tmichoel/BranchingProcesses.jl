@@ -54,8 +54,44 @@ branchingheatmap(sol; func=u -> u^2)
 
 ```@example heatmap
 anim = animate_heatmaps(sol; nframes=30)
-gif(anim, "growth.gif"; fps=10)
+gif(anim, "growth.gif"; fps=10, loop=1)
 ```
+
+## Spatial clustering in the Luria-Delbrück model
+
+In the [Luria-Delbrück model](./fluctuation-experiment.md) without back-mutation, once a mutant arises, all its offspring are mutants too. Hence mutants should cluster together in space:
+
+
+```@example heatmap
+using Catalyst
+rn = @reaction_network begin
+    μ, W --> M
+end
+u0 = [:W => 1, :M => 0]
+p  = [:μ => 0.1]
+tspan = (0.0, 10.0)
+
+jprob  = JumpProblem(rn, u0, tspan, p)
+bjprob = ConstantRateBranchingProblem(jprob, 1.0, 2; ndim=2);
+
+Random.seed!(42) # hide
+sol = solve(bjprob, SSAStepper());
+nothing # hide
+```
+
+```@example heatmap
+anim_wt = animate_heatmaps(sol; nframes=30)
+gif(anim_wt, "growth_wt.gif"; fps=10, loop=1)
+```
+
+For a multivariate model, the heatmap shows the value of the first component by default, that is, the wildtype status (0 or 1) in the figure above. To plot the mutant status, or any other function of the variables, instead, we use:
+
+
+```@example heatmap
+anim_mut = animate_heatmaps(sol; nframes=30, func=u->u[2])
+gif(anim_mut, "growth_mut.gif"; fps=10, loop=1)
+```
+
 
 ## See also
 
