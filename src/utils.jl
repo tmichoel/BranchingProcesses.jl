@@ -218,7 +218,7 @@ time step, together with the corresponding time values.
 See also: [`timestep_crosscov`](@ref), [`timeseries_steps_crosscor`](@ref)
 """
 function timeseries_steps_crosscov(sim)
-    covs = [timestep_crosscov(sim, i) for i in 1:length(sim.u[1])]
+    covs = [timestep_crosscov(sim, i) for i in 1:length(sim.u[1].t)]
     t = sim.u[1].t
     return DiffEqArray(covs, t)
 end
@@ -261,7 +261,7 @@ variance are set to `NaN`.
 See also: [`timestep_crosscor`](@ref), [`timeseries_steps_crosscov`](@ref)
 """
 function timeseries_steps_crosscor(sim)
-    cors = [timestep_crosscor(sim, i) for i in 1:length(sim.u[1])]
+    cors = [timestep_crosscor(sim, i) for i in 1:length(sim.u[1].t)]
     t = sim.u[1].t
     return DiffEqArray(cors, t)
 end
