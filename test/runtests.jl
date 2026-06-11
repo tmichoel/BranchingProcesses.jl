@@ -322,9 +322,9 @@ end
         covs = timeseries_steps_crosscov(results)
         # Should return a DiffEqArray with one entry per time step
         @test covs isa RecursiveArrayTools.AbstractDiffEqArray
-        @test length(covs) == nsteps
+        @test length(covs.u) == nsteps
         # Each element is a vector of length d²
-        for c_vec in covs
+        for c_vec in covs.u
             @test c_vec isa AbstractVector
             @test length(c_vec) == d^2
             C = reshape(c_vec, d, d)
@@ -363,9 +363,9 @@ end
         cors = timeseries_steps_crosscor(results)
         # Should return a DiffEqArray with one entry per time step
         @test cors isa RecursiveArrayTools.AbstractDiffEqArray
-        @test length(cors) == nsteps
+        @test length(cors.u) == nsteps
         # Each element is a vector of length d²
-        for r_vec in cors
+        for r_vec in cors.u
             @test r_vec isa AbstractVector
             @test length(r_vec) == d^2
         end
