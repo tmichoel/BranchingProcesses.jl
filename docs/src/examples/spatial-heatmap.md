@@ -63,7 +63,7 @@ In the [Luria-Delbrück model](./fluctuation-experiment.md) without back-mutatio
 
 
 ```@example heatmap
-using Catalyst
+using Catalyst, JumpProcesses
 rn = @reaction_network begin
     μ, W --> M
 end
@@ -75,21 +75,19 @@ jprob  = JumpProblem(rn, u0, tspan, p)
 bjprob = ConstantRateBranchingProblem(jprob, 1.0, 2; ndim=2);
 
 Random.seed!(42) # hide
-sol = solve(bjprob, SSAStepper());
+bjsol = solve(bjprob, SSAStepper());
 nothing # hide
 ```
 
 ```@example heatmap
-anim_wt = animate_heatmaps(sol; nframes=30)
-gif(anim_wt, "growth_wt.gif"; fps=10, loop=1)
+branchingheatmap(bjsol)
 ```
 
-For a multivariate model, the heatmap shows the value of the first component by default, that is, the wildtype status (0 or 1) in the figure above. To plot the mutant status, or any other function of the variables, instead, we use:
+For a multivariate model, the heatmap shows the value of the first component by default, that is, the wildtype status (0 or 1) in the figure above. To plot the mutant status (second variabele) we can use the `func` keyword:
 
 
 ```@example heatmap
-anim_mut = animate_heatmaps(sol; nframes=30, func=u->u[2])
-gif(anim_mut, "growth_mut.gif"; fps=10, loop=1)
+branchingheatmap(bjsol; func=u->u[2])
 ```
 
 
