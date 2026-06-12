@@ -1,5 +1,87 @@
 # Changelog
 
+## BranchingProcesses v0.7.0
+
+[Diff since v0.6.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.6.0...v0.7.0)
+
+## Breaking Changes
+
+- No breaking changes in this release.
+
+## New Features
+
+- **`tissue_growth!`: spatial tissue-growth layout**: New function that assigns spatial grid positions to all nodes in a branching process tree, implementing an adaptation of Algorithm 3 from [Kerstjens et al. (2022)](https://doi.org/10.1371/journal.pcbi.1010382). The root is placed at the origin of an unbounded `ndim`-dimensional integer grid (1D, 2D, or 3D). For each branching event, `n − 1` independent random ray directions are drawn for `n` daughters; occupied slots along each ray are pushed outward and the freed slot is assigned to the next daughter, while the last daughter inherits the parent's position. Dead leaf nodes are removed from the grid before each division, ensuring time-consistency of the spatial layout. Full position histories are stored in the new `position_history` field of `BranchingProcessNode`.
+
+  ```julia
+  bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+  sol = solve(bp, EM(); dt=0.01)
+  tissue_growth!(sol.tree, 2)
+  ```
+
+- **`tissue_position`: time-consistent position query**: New function that retrieves the spatial grid position of a node at any time `t` using binary search over the node's `position_history`. Returns `nothing` for nodes that were not yet alive or had already died at `t`.
+
+  ```julia
+  pos = tissue_position(node, 1.5)  # position of node at t = 1.5
+  ```
+
+- **`ndim` field in `ConstantRateBranchingProblem`**: The constructor now accepts an optional `ndim` keyword argument (default `0`, meaning no spatial layout). This value is stored on the problem and used by `branchingheatmap` and `animate_heatmaps` to infer the spatial dimension automatically.
+
+- **`branchingheatmap` / `BranchingHeatmap` plot recipe**: New `@userplot BranchingHeatmap` for plotting spatial heatmaps of particle states at a given time. Supports 1D (single-row heatmap), 2D (standard heatmap), and 3D (coloured scatter plot). Automatically runs `tissue_growth!` if positions have not yet been assigned. Selects a diverging (`:bwr`) or sequential (`:viridis`) colormap depending on whether values are mixed-sign or one-sided. Implemented inside the `BranchingProcessesPlotsExt` package extension (requires `using Plots`).
+
+  ```julia
+  using BranchingProcesses, StochasticDiffEq, Plots
+  bp = ConstantRateBranchingProblem(prob, 1.0, 2; ndim=2)
+  sol = solve(bp, EM(); dt=0.01)
+  branchingheatmap(sol)             # heatmap at final time
+  branchingheatmap(sol; time=1.5)   # heatmap at t = 1.5
+  ```
+
+- **`animate_heatmaps`: animation convenience function**: New function (in the `BranchingProcessesPlotsExt` extension) that creates a `Plots.Animation` by generating heatmaps at `nframes` regularly spaced time points over the full time span of a `BranchingProcessSolution`. Uses a consistent color range and spatial grid extent across all frames to avoid flickering.
+
+  ```julia
+  anim = animate_heatmaps(sol; nframes=30)
+  gif(anim, "growth.gif"; fps=10)
+  ```
+
+- **`position_history` field in `BranchingProcessNode`**: New field storing a sorted vector of `(time, position)` pairs, populated by `tissue_growth!`. Defaults to `nothing` before any spatial layout is performed.
+
+## Bug Fixes
+
+- **`branchingheatmap` colormap ignoring `values_range`**: Fixed a bug where the `values_range` keyword argument was not used when computing `vmin`/`vmax` for colormap selection, causing the colormap choice to be based on the data range even when an explicit range was supplied (#47).
+- **`animate_heatmaps` inconsistent value range and spatial grid across frames**: Fixed `animate_heatmaps` to pre-compute a global value range and spatial grid extent before rendering, ensuring consistent color limits and axis bounds across all animation frames (#44).
+- **`timeseries_steps_crosscov` / `timeseries_steps_crosscor` SciMLBase v3 compatibility**: Fixed iteration over `ReducedBranchingProcessSolution` length to use `.t` instead of direct object length, which broke under SciMLBase v3.
+
+## Compatibility Updates
+
+- **SciMLBase v3 support**: `SciMLBase` compat entry updated from `"2"` to `"2, 3"`. The package now supports both SciMLBase v2 and v3 (#38). Internal utilities and tests were updated to match the changed `EnsembleSolution` and `DiffEqArray` iteration semantics in SciMLBase v3 (access trajectories via `.u`, not direct iteration).
+- **Julia compat raised to `1.9`**: Minimum supported Julia version updated from `1.6` to `1.9`.
+- **`Plots` added as a weak dependency**: `Plots.jl` is now declared as a `[weakdeps]` entry with a corresponding `BranchingProcessesPlotsExt` package extension. Spatial heatmap and animation functions are only available when `Plots` is loaded.
+- **`StochasticDiffEq` compat extended to v7** in test extras (#45).
+
+## Internal Changes
+
+- New `src/spatial.jl` source file containing `tissue_growth!` and `tissue_position`.
+- New `ext/BranchingProcessesPlotsExt.jl` package extension implementing `animate_heatmaps`.
+- CompatHelper: bump compat for SciMLBase to `"2, 3"` (#38).
+- CompatHelper: bump compat for StochasticDiffEq in `[extras]` to `7` (#45).
+- Bump `julia-actions/setup-julia` from 2 to 3 (#40).
+- `Random` added to test extras for deterministic spatial layout tests (#49).
+
+## Merged pull requests
+
+- Spatial tissue growth: fix citation and use independent rays per daughter (#39) (@Copilot)
+- Bump julia-actions/setup-julia from 2 to 3 (#40) (@dependabot[bot])
+- Add BranchingHeatmap plot recipe and animate_heatmaps animation convenience function (#41) (@Copilot)
+- Add spatial heatmap examples page to documentation (#42) (@Copilot)
+- feat: improve branchingheatmap with equal axes, diverging/sequential colormaps (#43) (@Copilot)
+- Fix animate_heatmaps to use consistent value range and spatial grid across all frames (#44) (@Copilot)
+- CompatHelper: bump compat for StochasticDiffEq in `[extras]` to 7 (#45) (@github-actions[bot])
+- Fix colormap selection ignoring `values_range` in `branchingheatmap` (#47) (@Copilot)
+- Implement time-consistent, adjacency-preserving spatial layout for branching process trees (#48) (@Copilot)
+- Update SciMLBase v3 test expectations for ensemble outputs (#49) (@Copilot)
+
+---
+
 ## BranchingProcesses v0.6.0
 
 [Diff since v0.5.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.5.0...v0.6.0)
