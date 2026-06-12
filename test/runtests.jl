@@ -322,9 +322,9 @@ end
         covs = timeseries_steps_crosscov(results)
         # Should return a DiffEqArray with one entry per time step
         @test covs isa RecursiveArrayTools.AbstractDiffEqArray
-        @test length(covs) == nsteps
+        @test length(covs.u) == nsteps
         # Each element is a vector of length d²
-        for c_vec in covs
+        for c_vec in covs.u
             @test c_vec isa AbstractVector
             @test length(c_vec) == d^2
             C = reshape(c_vec, d, d)
@@ -363,9 +363,9 @@ end
         cors = timeseries_steps_crosscor(results)
         # Should return a DiffEqArray with one entry per time step
         @test cors isa RecursiveArrayTools.AbstractDiffEqArray
-        @test length(cors) == nsteps
+        @test length(cors.u) == nsteps
         # Each element is a vector of length d²
-        for r_vec in cors
+        for r_vec in cors.u
             @test r_vec isa AbstractVector
             @test length(r_vec) == d^2
         end
@@ -397,7 +397,7 @@ end
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
                                          ensemble_alg=EnsembleThreads())
-        @test length(results) == nclone
+        @test length(results.u) == nclone
     end
 
     @testset "each element is a ReducedBranchingProcessSolution" begin
@@ -405,7 +405,7 @@ end
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
                                          ensemble_alg=EnsembleThreads())
-        for sol in results
+        for sol in results.u
             @test sol isa ReducedBranchingProcessSolution
         end
     end
@@ -417,7 +417,7 @@ end
                                          alg=SSAStepper(),
                                          ensemble_alg=EnsembleThreads(),
                                          reduce_kwargs=(; output_dt=dt))
-        for sol in results
+        for sol in results.u
             @test sol.t[1] ≈ tspan[1]
             @test sol.t[end] ≈ tspan[2]
             @test length(sol.t) == length(collect(tspan[1]:dt:tspan[2]))
@@ -430,7 +430,7 @@ end
                                          reduction=sum,
                                          alg=SSAStepper(),
                                          ensemble_alg=EnsembleThreads())
-        for sol in results
+        for sol in results.u
             @test sol isa ReducedBranchingProcessSolution
             @test sol.reduction === sum
         end
@@ -441,7 +441,7 @@ end
         results = fluctuation_experiment(bp, u0_dist, nclone;
                                          alg=SSAStepper(),
                                          ensemble_alg=EnsembleThreads())
-        for sol in results
+        for sol in results.u
             @test all(v[1] >= 0 for v in sol.u)
         end
     end
@@ -452,7 +452,7 @@ end
                                                   alg=SSAStepper(),
                                                   ensemble_alg=EnsembleSerial(),
                                                   rescale=t -> exp(-lambda * t))
-        for sol in results_rescaled
+        for sol in results_rescaled.u
             @test sol isa ReducedBranchingProcessSolution
             # After rescaling by exp(-lambda*t), values should be floating-point and finite
             @test eltype(sol.u[1]) <: AbstractFloat
