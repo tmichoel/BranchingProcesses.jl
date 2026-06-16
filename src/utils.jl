@@ -186,18 +186,20 @@ end
     timestep_crosscov(sim, i)
 
 Compute the cross-covariance matrix between variables at time step `i` of an ensemble
-solution. Given `N` ensemble members each with a `d`-dimensional state vector, this
-function returns the `d×d` sample covariance matrix whose `(j,k)` entry is the sample
+solution. `sim` can be either an `EnsembleSolution` or a vector of
+[`ReducedBranchingProcessSolution`](@ref) objects (i.e. the `.u` field of an
+`EnsembleSolution`). Given `N` ensemble members each with a `d`-dimensional state vector,
+this function returns the `d×d` sample covariance matrix whose `(j,k)` entry is the sample
 covariance between variable `j` and variable `k` across all trajectories at time step `i`.
 
 Returns the covariance matrix as a vector of length `d²` (using `C[:]`).
 
 See also: [`timeseries_steps_crosscov`](@ref), [`timestep_crosscor`](@ref)
 """
-function timestep_crosscov(sim, i)
-    N = length(sim.u)
+function timestep_crosscov(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    N = length(sim)
     # Collect state vectors at time step i from each ensemble member
-    data = [sim.u[n].u[i] for n in 1:N]
+    data = [sim[n].u[i] for n in 1:N]
     # Stack into a (d × N) matrix: each column is one observation
     X = reduce(hcat, data)
     # Sample covariance matrix (d × d), treating columns as observations
@@ -205,30 +207,39 @@ function timestep_crosscov(sim, i)
     return C[:]
 end
 
+timestep_crosscov(sim, i) = timestep_crosscov(sim.u, i)
+
 """
     timeseries_steps_crosscov(sim)
 
 Compute the cross-covariance matrix between variables at each time step of an ensemble
-solution. For each time step `i`, returns the `d×d` sample covariance matrix whose `(j,k)`
-entry is the sample covariance between variable `j` and variable `k` across all trajectories.
+solution. `sim` can be either an `EnsembleSolution` or a vector of
+[`ReducedBranchingProcessSolution`](@ref) objects (i.e. the `.u` field of an
+`EnsembleSolution`). For each time step `i`, returns the `d×d` sample covariance matrix
+whose `(j,k)` entry is the sample covariance between variable `j` and variable `k` across
+all trajectories.
 
 Returns a `DiffEqArray` containing the covariance vectors (each of length `d²`) at each
 time step, together with the corresponding time values.
 
 See also: [`timestep_crosscov`](@ref), [`timeseries_steps_crosscor`](@ref)
 """
-function timeseries_steps_crosscov(sim)
-    covs = [timestep_crosscov(sim, i) for i in 1:length(sim.u[1].t)]
-    t = sim.u[1].t
+function timeseries_steps_crosscov(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    covs = [timestep_crosscov(sim, i) for i in 1:length(sim[1].t)]
+    t = sim[1].t
     return DiffEqArray(covs, t)
 end
+
+timeseries_steps_crosscov(sim) = timeseries_steps_crosscov(sim.u)
 
 """
     timestep_crosscor(sim, i)
 
 Compute the cross-correlation matrix between variables at time step `i` of an ensemble
-solution. Given `N` ensemble members each with a `d`-dimensional state vector, this
-function returns the `d×d` sample correlation matrix whose `(j,k)` entry is the sample
+solution. `sim` can be either an `EnsembleSolution` or a vector of
+[`ReducedBranchingProcessSolution`](@ref) objects (i.e. the `.u` field of an
+`EnsembleSolution`). Given `N` ensemble members each with a `d`-dimensional state vector,
+this function returns the `d×d` sample correlation matrix whose `(j,k)` entry is the sample
 correlation between variable `j` and variable `k` across all trajectories at time step `i`.
 
 Returns the correlation matrix as a vector of length `d²` (using `R[:]`). Entries where a
@@ -236,7 +247,7 @@ variable has zero variance are set to `NaN`.
 
 See also: [`timeseries_steps_crosscor`](@ref), [`timestep_crosscov`](@ref)
 """
-function timestep_crosscor(sim, i)
+function timestep_crosscor(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
     c_vec = timestep_crosscov(sim, i)
     d = isqrt(length(c_vec))
     C = reshape(c_vec, d, d)
@@ -247,12 +258,17 @@ function timestep_crosscor(sim, i)
     return R[:]
 end
 
+timestep_crosscor(sim, i) = timestep_crosscor(sim.u, i)
+
 """
     timeseries_steps_crosscor(sim)
 
 Compute the cross-correlation matrix between variables at each time step of an ensemble
-solution. For each time step `i`, returns the `d×d` sample correlation matrix whose `(j,k)`
-entry is the sample correlation between variable `j` and variable `k` across all trajectories.
+solution. `sim` can be either an `EnsembleSolution` or a vector of
+[`ReducedBranchingProcessSolution`](@ref) objects (i.e. the `.u` field of an
+`EnsembleSolution`). For each time step `i`, returns the `d×d` sample correlation matrix
+whose `(j,k)` entry is the sample correlation between variable `j` and variable `k` across
+all trajectories.
 
 Returns a `DiffEqArray` containing the correlation vectors (each of length `d²`) at each
 time step, together with the corresponding time values. Entries where a variable has zero
@@ -260,11 +276,13 @@ variance are set to `NaN`.
 
 See also: [`timestep_crosscor`](@ref), [`timeseries_steps_crosscov`](@ref)
 """
-function timeseries_steps_crosscor(sim)
-    cors = [timestep_crosscor(sim, i) for i in 1:length(sim.u[1].t)]
-    t = sim.u[1].t
+function timeseries_steps_crosscor(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    cors = [timestep_crosscor(sim, i) for i in 1:length(sim[1].t)]
+    t = sim[1].t
     return DiffEqArray(cors, t)
 end
+
+timeseries_steps_crosscor(sim) = timeseries_steps_crosscor(sim.u)
 
 """
     fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)

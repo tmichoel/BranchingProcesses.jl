@@ -370,6 +370,26 @@ end
             @test length(r_vec) == d^2
         end
     end
+
+    @testset "vector input matches EnsembleSolution input" begin
+        # results.u is a Vector{ReducedBranchingProcessSolution}; all four functions
+        # should accept it and return the same output as when called with the full
+        # EnsembleSolution.
+        i = 1
+        @test timestep_crosscov(results.u, i) == timestep_crosscov(results, i)
+        # Use isequal rather than == so that NaN entries (zero-variance) compare equal
+        @test isequal(timestep_crosscor(results.u, i), timestep_crosscor(results, i))
+
+        covs_ens = timeseries_steps_crosscov(results)
+        covs_vec = timeseries_steps_crosscov(results.u)
+        @test covs_vec.u == covs_ens.u
+        @test covs_vec.t == covs_ens.t
+
+        cors_ens = timeseries_steps_crosscor(results)
+        cors_vec = timeseries_steps_crosscor(results.u)
+        @test isequal(cors_vec.u, cors_ens.u)
+        @test cors_vec.t == cors_ens.t
+    end
 end
 
 @testset "fluctuation_experiment tests" begin
