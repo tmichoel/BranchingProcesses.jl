@@ -321,9 +321,10 @@ end
             @test all(summary.lower[i] .<= summary.upper[i])
         end
 
-        flat_cov(sim) = vcat(timeseries_steps_crosscov(sim).u...)
+        state_matrices = [reduce(hcat, [sol.u[i] for sol in results.u]) for i in 1:nsteps]
+        flat_cov(idxs) = reduce(vcat, [cov(X[:, idxs], dims=2)[:] for X in state_matrices])
         Random.seed!(2024)
-        bs = bootstrap(flat_cov, results.u, BasicSampling(40))
+        bs = bootstrap(flat_cov, collect(eachindex(results.u)), BasicSampling(40))
         cis = confint(bs, BasicConfInt(0.9))
         expected = [mean(straps(bs, i)) for i in 1:Bootstrap.nvar(bs)]
         lower = [ci[2] for ci in cis]
