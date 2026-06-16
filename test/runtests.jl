@@ -348,9 +348,9 @@ end
         @test summary_ens isa RecursiveArrayTools.AbstractDiffEqArray
         @test summary_ens.t == results.u[1].t
         @test summary_ens.statistic == :crosscor
-        @test summary_vec.u == summary_ens.u
-        @test summary_vec.lower == summary_ens.lower
-        @test summary_vec.upper == summary_ens.upper
+        @test isequal(summary_vec.u, summary_ens.u)
+        @test isequal(summary_vec.lower, summary_ens.lower)
+        @test isequal(summary_vec.upper, summary_ens.upper)
         @test summary_vec.t == summary_ens.t
         for i in 1:nsteps
             @test length(summary_ens.u[i]) == d^2
