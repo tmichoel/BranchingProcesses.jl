@@ -248,20 +248,6 @@ end
                 sol.t, [u[i] for u in sol.u]
             end
         end
-
-        @recipe function f(sol::BootstrappedTimeSeriesSolution; idxs=nothing)
-            xlabel --> "t"
-            ylabel --> "u"
-
-            indices = idxs === nothing ? eachindex(sol.u[1]) : idxs
-            for i in indices
-                @series begin
-                    ribbon := ([sol.u[j][i] - sol.lower[j][i] for j in eachindex(sol.t)],
-                               [sol.upper[j][i] - sol.u[j][i] for j in eachindex(sol.t)])
-                    sol.t, [u[i] for u in sol.u]
-                end
-            end
-        end
     else
         # Plot only specified indices
         for i in idxs
@@ -269,6 +255,20 @@ end
                # label --> var_names !== nothing ? string(var_names[i]) : "u[$i]"
                 sol.t, [u[i] for u in sol.u]
             end
+        end
+    end
+end
+
+@recipe function f(sol::BootstrappedTimeSeriesSolution; idxs=nothing)
+    xlabel --> "t"
+    ylabel --> "u"
+
+    indices = idxs === nothing ? eachindex(sol.u[1]) : idxs
+    for i in indices
+        @series begin
+            ribbon := ([sol.u[j][i] - sol.lower[j][i] for j in eachindex(sol.t)],
+                       [sol.upper[j][i] - sol.u[j][i] for j in eachindex(sol.t)])
+            sol.t, [u[i] for u in sol.u]
         end
     end
 end
