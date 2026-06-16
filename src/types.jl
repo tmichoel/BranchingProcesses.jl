@@ -229,6 +229,42 @@ struct ReducedBranchingProcessSolution{T,N,uType,tType,P,A,IType,TransType,RedTy
     neutral_fn::NeutType
 end
 
+# Summary type for bootstrapped time series statistics
+struct BootstrappedTimeSeriesSolution{T,N,uType,tType,LowerType,UpperType,StatType,SamplingType,ConfIntType} <: RecursiveArrayTools.AbstractDiffEqArray{T,N,uType}
+    """Bootstrapped expected values at each time point."""
+    u::uType
+    """The time points."""
+    t::tType
+    """Lower confidence bounds at each time point."""
+    lower::LowerType
+    """Upper confidence bounds at each time point."""
+    upper::UpperType
+    """Statistic summarized by the bootstrap output."""
+    statistic::StatType
+    """Bootstrap resampling method used."""
+    sampling::SamplingType
+    """Confidence-interval method used."""
+    confint_method::ConfIntType
+end
+
+function BootstrappedTimeSeriesSolution(u, t, lower, upper;
+                                        statistic=nothing,
+                                        sampling=nothing,
+                                        confint_method=nothing)
+    T = eltype(u[1])
+    N = ndims(u[1]) + 1
+    uType = typeof(u)
+    tType = typeof(t)
+    LowerType = typeof(lower)
+    UpperType = typeof(upper)
+    StatType = typeof(statistic)
+    SamplingType = typeof(sampling)
+    ConfIntType = typeof(confint_method)
+    return BootstrappedTimeSeriesSolution{T,N,uType,tType,LowerType,UpperType,StatType,SamplingType,ConfIntType}(
+        u, t, lower, upper, statistic, sampling, confint_method
+    )
+end
+
 # Main constructor
 function ReducedBranchingProcessSolution(u, t; 
                                        prob=nothing, 

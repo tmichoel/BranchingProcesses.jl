@@ -13,6 +13,7 @@ module BranchingProcesses
 
 # dependencies
 using AbstractTrees
+using Bootstrap
 using ColorSchemes
 using Distributions
 using DocStringExtensions
@@ -31,10 +32,11 @@ include("plot_recipes.jl")
 include("utils.jl")
 
 # exported names
-export ConstantRateBranchingProblem, BranchingProcessSolution, BranchingProcessNode, ReducedBranchingProcessSolution
+export ConstantRateBranchingProblem, BranchingProcessSolution, BranchingProcessNode, ReducedBranchingProcessSolution, BootstrappedTimeSeriesSolution
 export solve, remake, solve_and_split, solve_and_reduce, sample_lifetime, sample_offspring, remake_initial_condition
 export tip_values, get_timespan, reduce_tree, rescale, rescale!, node_generations, fluctuation_experiment
 export timestep_crosscov, timeseries_steps_crosscov, timestep_crosscor, timeseries_steps_crosscor
+export timeseries_steps_crosscov_bootstrap, timeseries_steps_crosscor_bootstrap
 export tissue_growth!, tissue_position
 export branchingheatmap, BranchingHeatmap
 export animate_heatmaps

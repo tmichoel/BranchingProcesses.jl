@@ -197,14 +197,7 @@ Returns the covariance matrix as a vector of length `d²` (using `C[:]`).
 See also: [`timeseries_steps_crosscov`](@ref), [`timestep_crosscor`](@ref)
 """
 function timestep_crosscov(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
-    N = length(sim)
-    # Collect state vectors at time step i from each ensemble member
-    data = [sim[n].u[i] for n in 1:N]
-    # Stack into a (d × N) matrix: each column is one observation
-    X = reduce(hcat, data)
-    # Sample covariance matrix (d × d), treating columns as observations
-    C = cov(X, dims=2)
-    return C[:]
+    return _crosscov_from_matrix(_timestep_state_matrix(sim, i))
 end
 
 timestep_crosscov(sim, i) = timestep_crosscov(sim.u, i)
@@ -232,6 +225,94 @@ end
 
 timeseries_steps_crosscov(sim) = timeseries_steps_crosscov(sim.u)
 
+function _timestep_state_matrix(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    return reduce(hcat, [sol.u[i] for sol in sim])
+end
+
+_crosscov_from_matrix(X::AbstractMatrix) = cov(X, dims=2)[:]
+
+function _crosscor_from_matrix(X::AbstractMatrix)
+    C = reshape(_crosscov_from_matrix(X), size(X, 1), size(X, 1))
+    stds = sqrt.(diag(C))
+    return (C ./ (stds * stds'))[:]
+end
+
+function _bootstrap_timeseries_steps(sim::AbstractVector{<:ReducedBranchingProcessSolution},
+                                     matrix_statistic::Function,
+                                     label;
+                                     sampling=BasicSampling(1000),
+                                     confint_method=BasicConfInt,
+                                     level=0.95)
+    t = sim[1].t
+    cim = confint_method isa Bootstrap.ConfIntMethod ? confint_method : confint_method(level)
+    idxs = collect(eachindex(sim))
+    state_matrices = [_timestep_state_matrix(sim, i) for i in eachindex(t)]
+    expected = Vector{Vector{Float64}}(undef, length(t))
+    lower = similar(expected)
+    upper = similar(expected)
+    for (i, X) in pairs(state_matrices)
+        bs = bootstrap(sampled_idxs -> matrix_statistic(X[:, sampled_idxs]), idxs, sampling)
+        expected_i = Vector{Float64}(undef, nvar(bs))
+        lower_i = Vector{Float64}(undef, nvar(bs))
+        upper_i = Vector{Float64}(undef, nvar(bs))
+        for j in 1:nvar(bs)
+            strap_j = straps(bs, j)
+            if any(isnan, strap_j)
+                expected_i[j] = NaN
+                lower_i[j] = NaN
+                upper_i[j] = NaN
+            else
+                ci = confint(bs, cim, j)
+                expected_i[j] = mean(strap_j)
+                lower_i[j] = ci[2]
+                upper_i[j] = ci[3]
+            end
+        end
+        expected[i] = expected_i
+        lower[i] = lower_i
+        upper[i] = upper_i
+    end
+    return BootstrappedTimeSeriesSolution(
+        expected,
+        t,
+        lower,
+        upper;
+        statistic=label,
+        sampling=sampling,
+        confint_method=cim
+    )
+end
+
+"""
+    timeseries_steps_crosscov_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of cross-covariance vectors returned by
+[`timeseries_steps_crosscov`](@ref). `sim` can be either an `EnsembleSolution` or a vector of
+[`ReducedBranchingProcessSolution`](@ref) objects.
+
+The returned [`BootstrappedTimeSeriesSolution`](@ref) stores the bootstrapped expected
+cross-covariances in `u` and the corresponding lower and upper confidence bounds in `lower`
+and `upper`.
+"""
+function timeseries_steps_crosscov_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                             sampling=BasicSampling(1000),
+                                             confint_method=BasicConfInt,
+                                             level=0.95)
+    return _bootstrap_timeseries_steps(sim, _crosscov_from_matrix, :crosscov;
+                                       sampling=sampling,
+                                       confint_method=confint_method,
+                                       level=level)
+end
+
+timeseries_steps_crosscov_bootstrap(sim;
+                                    sampling=BasicSampling(1000),
+                                    confint_method=BasicConfInt,
+                                    level=0.95) =
+    timeseries_steps_crosscov_bootstrap(sim.u;
+                                        sampling=sampling,
+                                        confint_method=confint_method,
+                                        level=level)
+
 """
     timestep_crosscor(sim, i)
 
@@ -248,14 +329,7 @@ variable has zero variance are set to `NaN`.
 See also: [`timeseries_steps_crosscor`](@ref), [`timestep_crosscov`](@ref)
 """
 function timestep_crosscor(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
-    c_vec = timestep_crosscov(sim, i)
-    d = isqrt(length(c_vec))
-    C = reshape(c_vec, d, d)
-    # Compute standard deviations from the diagonal of the covariance matrix
-    stds = sqrt.(diag(C))
-    # Normalise: R[j,k] = C[j,k] / (std_j * std_k); zero-variance entries yield NaN
-    R = C ./ (stds * stds')
-    return R[:]
+    return _crosscor_from_matrix(_timestep_state_matrix(sim, i))
 end
 
 timestep_crosscor(sim, i) = timestep_crosscor(sim.u, i)
@@ -283,6 +357,36 @@ function timeseries_steps_crosscor(sim::AbstractVector{<:ReducedBranchingProcess
 end
 
 timeseries_steps_crosscor(sim) = timeseries_steps_crosscor(sim.u)
+
+"""
+    timeseries_steps_crosscor_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of cross-correlation vectors returned by
+[`timeseries_steps_crosscor`](@ref). `sim` can be either an `EnsembleSolution` or a vector of
+[`ReducedBranchingProcessSolution`](@ref) objects.
+
+The returned [`BootstrappedTimeSeriesSolution`](@ref) stores the bootstrapped expected
+cross-correlations in `u` and the corresponding lower and upper confidence bounds in `lower`
+and `upper`.
+"""
+function timeseries_steps_crosscor_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                             sampling=BasicSampling(1000),
+                                             confint_method=BasicConfInt,
+                                             level=0.95)
+    return _bootstrap_timeseries_steps(sim, _crosscor_from_matrix, :crosscor;
+                                       sampling=sampling,
+                                       confint_method=confint_method,
+                                       level=level)
+end
+
+timeseries_steps_crosscor_bootstrap(sim;
+                                    sampling=BasicSampling(1000),
+                                    confint_method=BasicConfInt,
+                                    level=0.95) =
+    timeseries_steps_crosscor_bootstrap(sim.u;
+                                        sampling=sampling,
+                                        confint_method=confint_method,
+                                        level=level)
 
 """
     fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)

@@ -259,6 +259,20 @@ end
     end
 end
 
+@recipe function f(sol::BootstrappedTimeSeriesSolution; idxs=nothing)
+    xlabel --> "t"
+    ylabel --> "u"
+
+    indices = idxs === nothing ? eachindex(sol.u[1]) : idxs
+    for i in indices
+        @series begin
+            ribbon := ([sol.u[j][i] - sol.lower[j][i] for j in eachindex(sol.t)],
+                       [sol.upper[j][i] - sol.u[j][i] for j in eachindex(sol.t)])
+            sol.t, [u[i] for u in sol.u]
+        end
+    end
+end
+
 # Helper function to extract variable names from a solution
 function get_variable_names(sol)
     if hasfield(typeof(sol), :prob) && hasfield(typeof(sol.prob), :f) && 
