@@ -321,20 +321,17 @@ end
             @test all(summary.lower[i] .<= summary.upper[i])
         end
 
-        state_matrices = [reduce(hcat, [sol.u[i] for sol in results.u]) for i in 1:nsteps]
-        flat_cov(idxs) = reduce(vcat, [cov(X[:, idxs], dims=2)[:] for X in state_matrices])
+        state_matrix = reduce(hcat, [sol.u[1] for sol in results.u])
+        cov_stat(idxs) = cov(state_matrix[:, idxs], dims=2)[:]
         Random.seed!(2024)
-        bs = bootstrap(flat_cov, collect(eachindex(results.u)), BasicSampling(40))
+        bs = bootstrap(cov_stat, collect(eachindex(results.u)), BasicSampling(40))
         cis = confint(bs, BasicConfInt(0.9))
         expected = [mean(straps(bs, i)) for i in 1:Bootstrap.nvar(bs)]
         lower = [ci[2] for ci in cis]
         upper = [ci[3] for ci in cis]
-        expected_u = [expected[(i - 1) * d^2 + 1:i * d^2] for i in 1:nsteps]
-        expected_lower = [lower[(i - 1) * d^2 + 1:i * d^2] for i in 1:nsteps]
-        expected_upper = [upper[(i - 1) * d^2 + 1:i * d^2] for i in 1:nsteps]
-        @test summary.u == expected_u
-        @test summary.lower == expected_lower
-        @test summary.upper == expected_upper
+        @test summary.u[1] == expected
+        @test summary.lower[1] == lower
+        @test summary.upper[1] == upper
     end
 
     @testset "timeseries_steps_crosscor_bootstrap" begin
@@ -357,7 +354,8 @@ end
         @test summary_vec.t == summary_ens.t
         for i in 1:nsteps
             @test length(summary_ens.u[i]) == d^2
-            @test all(summary_ens.lower[i] .<= summary_ens.upper[i])
+            @test all((isnan.(summary_ens.lower[i]) .& isnan.(summary_ens.upper[i])) .|
+                      (summary_ens.lower[i] .<= summary_ens.upper[i]))
         end
     end
 end

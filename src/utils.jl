@@ -225,8 +225,6 @@ end
 
 timeseries_steps_crosscov(sim) = timeseries_steps_crosscov(sim.u)
 
-_flatten_diffeqarray(sol::RecursiveArrayTools.AbstractDiffEqArray) = vcat(sol.u...)
-
 function _timestep_state_matrix(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
     return reduce(hcat, [sol.u[i] for sol in sim])
 end
@@ -239,10 +237,6 @@ function _crosscor_from_matrix(X::AbstractMatrix)
     return (C ./ (stds * stds'))[:]
 end
 
-function _reshape_bootstrap_series(values::AbstractVector, ntime::Integer, nvar::Integer)
-    return [collect(values[(i - 1) * nvar + 1:i * nvar]) for i in 1:ntime]
-end
-
 function _bootstrap_timeseries_steps(sim::AbstractVector{<:ReducedBranchingProcessSolution},
                                      matrix_statistic::Function,
                                      label;
@@ -250,21 +244,39 @@ function _bootstrap_timeseries_steps(sim::AbstractVector{<:ReducedBranchingProce
                                      confint_method=BasicConfInt,
                                      level=0.95)
     t = sim[1].t
-    ntime = length(t)
-    state_matrices = [_timestep_state_matrix(sim, i) for i in 1:ntime]
-    nseries = length(matrix_statistic(state_matrices[1]))
-    flat_statistic = idxs -> reduce(vcat, [matrix_statistic(X[:, idxs]) for X in state_matrices])
-    bs = bootstrap(flat_statistic, collect(eachindex(sim)), sampling)
-    cim = confint_method isa ConfIntMethod ? confint_method : confint_method(level)
-    cis = confint(bs, cim)
-    expected = [mean(straps(bs, i)) for i in 1:nvar(bs)]
-    lower = [ci[2] for ci in cis]
-    upper = [ci[3] for ci in cis]
+    cim = confint_method isa Bootstrap.ConfIntMethod ? confint_method : confint_method(level)
+    idxs = collect(eachindex(sim))
+    state_matrices = [_timestep_state_matrix(sim, i) for i in eachindex(t)]
+    expected = Vector{Vector{Float64}}(undef, length(t))
+    lower = similar(expected)
+    upper = similar(expected)
+    for (i, X) in pairs(state_matrices)
+        bs = bootstrap(sampled_idxs -> matrix_statistic(X[:, sampled_idxs]), idxs, sampling)
+        expected_i = Vector{Float64}(undef, nvar(bs))
+        lower_i = Vector{Float64}(undef, nvar(bs))
+        upper_i = Vector{Float64}(undef, nvar(bs))
+        for j in 1:nvar(bs)
+            strap_j = straps(bs, j)
+            if any(isnan, strap_j)
+                expected_i[j] = NaN
+                lower_i[j] = NaN
+                upper_i[j] = NaN
+            else
+                ci = confint(bs, cim, j)
+                expected_i[j] = mean(strap_j)
+                lower_i[j] = ci[2]
+                upper_i[j] = ci[3]
+            end
+        end
+        expected[i] = expected_i
+        lower[i] = lower_i
+        upper[i] = upper_i
+    end
     return BootstrappedTimeSeriesSolution(
-        _reshape_bootstrap_series(expected, ntime, nseries),
+        expected,
         t,
-        _reshape_bootstrap_series(lower, ntime, nseries),
-        _reshape_bootstrap_series(upper, ntime, nseries);
+        lower,
+        upper;
         statistic=label,
         sampling=sampling,
         confint_method=cim
