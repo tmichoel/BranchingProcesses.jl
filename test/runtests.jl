@@ -271,6 +271,96 @@ end
     end
 end
 
+@testset "bootstrap crosscov and crosscor utility functions" begin
+    using Bootstrap
+    using Distributions
+    using JumpProcesses
+    using Random
+    using RecursiveArrayTools
+    using SciMLBase
+    using Statistics
+
+    Random.seed!(1234)
+
+    u0 = [1.0, 2.0]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    function affect!(integrator)
+        integrator.u[1] += 1.0
+        integrator.u[2] += integrator.u[1]
+    end
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+    u0_dist = product_distribution([Dirac(1.0), Dirac(2.0)])
+    results = fluctuation_experiment(bp, u0_dist, 12;
+                                     alg=SSAStepper(),
+                                     ensemble_alg=EnsembleSerial())
+
+    nsteps = length(results.u[1].t)
+    d = length(results.u[1].u[1])
+
+    @testset "timeseries_steps_crosscov_bootstrap" begin
+        Random.seed!(2024)
+        summary = timeseries_steps_crosscov_bootstrap(results;
+                                                      sampling=BasicSampling(40),
+                                                      confint_method=BasicConfInt,
+                                                      level=0.9)
+        @test summary isa RecursiveArrayTools.AbstractDiffEqArray
+        @test summary.t == results.u[1].t
+        @test summary.statistic == :crosscov
+        @test length(summary.u) == nsteps
+        @test length(summary.lower) == nsteps
+        @test length(summary.upper) == nsteps
+        for i in 1:nsteps
+            @test length(summary.u[i]) == d^2
+            @test length(summary.lower[i]) == d^2
+            @test length(summary.upper[i]) == d^2
+            @test all(summary.lower[i] .<= summary.upper[i])
+        end
+
+        flat_cov(sim) = vcat(timeseries_steps_crosscov(sim).u...)
+        Random.seed!(2024)
+        bs = bootstrap(flat_cov, results.u, BasicSampling(40))
+        cis = confint(bs, BasicConfInt(0.9))
+        expected = [mean(straps(bs, i)) for i in 1:Bootstrap.nvar(bs)]
+        lower = [ci[2] for ci in cis]
+        upper = [ci[3] for ci in cis]
+        expected_u = [expected[(i - 1) * d^2 + 1:i * d^2] for i in 1:nsteps]
+        expected_lower = [lower[(i - 1) * d^2 + 1:i * d^2] for i in 1:nsteps]
+        expected_upper = [upper[(i - 1) * d^2 + 1:i * d^2] for i in 1:nsteps]
+        @test summary.u == expected_u
+        @test summary.lower == expected_lower
+        @test summary.upper == expected_upper
+    end
+
+    @testset "timeseries_steps_crosscor_bootstrap" begin
+        Random.seed!(4321)
+        summary_ens = timeseries_steps_crosscor_bootstrap(results;
+                                                          sampling=BasicSampling(35),
+                                                          confint_method=PercentileConfInt,
+                                                          level=0.8)
+        Random.seed!(4321)
+        summary_vec = timeseries_steps_crosscor_bootstrap(results.u;
+                                                          sampling=BasicSampling(35),
+                                                          confint_method=PercentileConfInt,
+                                                          level=0.8)
+        @test summary_ens isa RecursiveArrayTools.AbstractDiffEqArray
+        @test summary_ens.t == results.u[1].t
+        @test summary_ens.statistic == :crosscor
+        @test summary_vec.u == summary_ens.u
+        @test summary_vec.lower == summary_ens.lower
+        @test summary_vec.upper == summary_ens.upper
+        @test summary_vec.t == summary_ens.t
+        for i in 1:nsteps
+            @test length(summary_ens.u[i]) == d^2
+            @test all(summary_ens.lower[i] .<= summary_ens.upper[i])
+        end
+    end
+end
+
 @testset "crosscov and crosscor utility functions" begin
     using Distributions
     using SciMLBase
