@@ -390,7 +390,11 @@ end
         pve_stat(idxs) = begin
             C = cov(state_matrix[:, idxs], dims=2)
             λ = eigvals(Symmetric(C))
-            sort!(λ ./ sum(λ); rev=true)
+            trC = sum(λ)
+            if trC <= eps(real(float(trC)))
+                return zeros(length(λ))
+            end
+            sort!(λ ./ trC; rev=true)
         end
         Random.seed!(5432)
         bs = bootstrap(pve_stat, collect(eachindex(results.u)), BasicSampling(30))

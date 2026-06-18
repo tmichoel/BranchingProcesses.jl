@@ -241,8 +241,8 @@ function _crosscov_variance_explained_from_matrix(X::AbstractMatrix)
     C = reshape(_crosscov_from_matrix(X), size(X, 1), size(X, 1))
     λ = eigvals(Symmetric(C))
     trC = sum(λ)
-    if iszero(trC)
-        return fill(NaN, length(λ))
+    if trC <= eps(real(float(trC)))
+        return zeros(length(λ))
     end
     return sort!(λ ./ trC; rev=true)
 end
