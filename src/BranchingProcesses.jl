@@ -37,6 +37,7 @@ export solve, remake, solve_and_split, solve_and_reduce, sample_lifetime, sample
 export tip_values, get_timespan, reduce_tree, rescale, rescale!, node_generations, fluctuation_experiment
 export timestep_crosscov, timeseries_steps_crosscov, timestep_crosscor, timeseries_steps_crosscor
 export timeseries_steps_crosscov_bootstrap, timeseries_steps_crosscor_bootstrap
+export timeseries_steps_crosscov_variance_explained_bootstrap
 export tissue_growth!, tissue_position
 export branchingheatmap, BranchingHeatmap
 export animate_heatmaps

@@ -18,6 +18,7 @@ timestep_crosscov
 timeseries_steps_crosscov
 timestep_crosscor
 timeseries_steps_crosscor
+timeseries_steps_crosscov_variance_explained_bootstrap
 ```
 
 ```@docs

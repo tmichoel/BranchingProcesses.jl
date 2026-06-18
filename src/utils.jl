@@ -237,6 +237,16 @@ function _crosscor_from_matrix(X::AbstractMatrix)
     return (C ./ (stds * stds'))[:]
 end
 
+function _crosscov_variance_explained_from_matrix(X::AbstractMatrix)
+    C = reshape(_crosscov_from_matrix(X), size(X, 1), size(X, 1))
+    λ = eigvals(Symmetric(C))
+    trC = sum(λ)
+    if iszero(trC)
+        return fill(NaN, length(λ))
+    end
+    return sort!(λ ./ trC; rev=true)
+end
+
 function _bootstrap_timeseries_steps(sim::AbstractVector{<:ReducedBranchingProcessSolution},
                                      matrix_statistic::Function,
                                      label;
@@ -387,6 +397,38 @@ timeseries_steps_crosscor_bootstrap(sim;
                                         sampling=sampling,
                                         confint_method=confint_method,
                                         level=level)
+
+"""
+    timeseries_steps_crosscov_variance_explained_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of percent variance explained by the eigenvectors of the
+cross-covariance matrix at each time step. The percent variance explained is computed as
+`λᵢ / tr(C)`, where `λᵢ` is an eigenvalue of the cross-covariance matrix `C`. `sim` can be
+either an `EnsembleSolution` or a vector of [`ReducedBranchingProcessSolution`](@ref)
+objects.
+
+The returned [`BootstrappedTimeSeriesSolution`](@ref) stores the bootstrapped expected
+percent variance explained in `u` and the corresponding lower and upper confidence bounds
+in `lower` and `upper`.
+"""
+function timeseries_steps_crosscov_variance_explained_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                                                sampling=BasicSampling(1000),
+                                                                confint_method=BasicConfInt,
+                                                                level=0.95)
+    return _bootstrap_timeseries_steps(sim, _crosscov_variance_explained_from_matrix, :crosscov_variance_explained;
+                                       sampling=sampling,
+                                       confint_method=confint_method,
+                                       level=level)
+end
+
+timeseries_steps_crosscov_variance_explained_bootstrap(sim;
+                                                       sampling=BasicSampling(1000),
+                                                       confint_method=BasicConfInt,
+                                                       level=0.95) =
+    timeseries_steps_crosscov_variance_explained_bootstrap(sim.u;
+                                                           sampling=sampling,
+                                                           confint_method=confint_method,
+                                                           level=level)
 
 """
     fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)

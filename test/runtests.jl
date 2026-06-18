@@ -275,6 +275,7 @@ end
     using Bootstrap
     using Distributions
     using JumpProcesses
+    using LinearAlgebra
     using Random
     using RecursiveArrayTools
     using SciMLBase
@@ -357,6 +358,49 @@ end
             @test all((isnan.(summary_ens.lower[i]) .& isnan.(summary_ens.upper[i])) .|
                       (summary_ens.lower[i] .<= summary_ens.upper[i]))
         end
+    end
+
+    @testset "timeseries_steps_crosscov_variance_explained_bootstrap" begin
+        Random.seed!(5432)
+        summary_ens = timeseries_steps_crosscov_variance_explained_bootstrap(results;
+                                                                              sampling=BasicSampling(30),
+                                                                              confint_method=BasicConfInt,
+                                                                              level=0.85)
+        Random.seed!(5432)
+        summary_vec = timeseries_steps_crosscov_variance_explained_bootstrap(results.u;
+                                                                              sampling=BasicSampling(30),
+                                                                              confint_method=BasicConfInt,
+                                                                              level=0.85)
+        @test summary_ens isa RecursiveArrayTools.AbstractDiffEqArray
+        @test summary_ens.t == results.u[1].t
+        @test summary_ens.statistic == :crosscov_variance_explained
+        @test isequal(summary_vec.u, summary_ens.u)
+        @test isequal(summary_vec.lower, summary_ens.lower)
+        @test isequal(summary_vec.upper, summary_ens.upper)
+        @test summary_vec.t == summary_ens.t
+
+        for i in 1:nsteps
+            @test length(summary_ens.u[i]) == d
+            @test length(summary_ens.lower[i]) == d
+            @test length(summary_ens.upper[i]) == d
+            @test all(summary_ens.lower[i] .<= summary_ens.upper[i])
+        end
+
+        state_matrix = reduce(hcat, [sol.u[1] for sol in results.u])
+        pve_stat(idxs) = begin
+            C = cov(state_matrix[:, idxs], dims=2)
+            λ = eigvals(Symmetric(C))
+            sort!(λ ./ sum(λ); rev=true)
+        end
+        Random.seed!(5432)
+        bs = bootstrap(pve_stat, collect(eachindex(results.u)), BasicSampling(30))
+        cis = confint(bs, BasicConfInt(0.85))
+        expected = [mean(straps(bs, i)) for i in 1:Bootstrap.nvar(bs)]
+        lower = [ci[2] for ci in cis]
+        upper = [ci[3] for ci in cis]
+        @test summary_ens.u[1] == expected
+        @test summary_ens.lower[1] == lower
+        @test summary_ens.upper[1] == upper
     end
 end
 
