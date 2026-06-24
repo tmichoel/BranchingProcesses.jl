@@ -231,6 +231,150 @@ end
 
 _crosscov_from_matrix(X::AbstractMatrix) = cov(X, dims=2)[:]
 
+function _particle_numbers_at_timestep(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    nparticles = [sol.nparticles for sol in sim]
+    if any(isnothing, nparticles)
+        throw(ArgumentError("all solutions must have `nparticles`; use `fluctuation_experiment` or `solve_and_reduce` outputs"))
+    end
+    return Float64[getindex(n, i) for n in nparticles]
+end
+
+_clonal_mean_from_state_and_counts(X::AbstractMatrix, N::AbstractVector) = vec(mean(X, dims=2)) ./ mean(N)
+
+function _clonal_intrinsic_crosscov_from_state_and_counts(X::AbstractMatrix, N::AbstractVector)
+    μ = _clonal_mean_from_state_and_counts(X, N)
+    C = reshape(_crosscov_from_matrix(X), size(X, 1), size(X, 1))
+    return (C .- (μ * μ') .* var(N))[:]
+end
+
+_clonal_intrinsic_var_from_state_and_counts(X::AbstractMatrix, N::AbstractVector) =
+    diag(reshape(_clonal_intrinsic_crosscov_from_state_and_counts(X, N), size(X, 1), size(X, 1)))
+
+"""
+    timestep_particle_number(sim, i)
+
+Return the particle numbers across clones at time step `i`.
+"""
+function timestep_particle_number(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    return _particle_numbers_at_timestep(sim, i)
+end
+
+timestep_particle_number(sim, i) = timestep_particle_number(sim.u, i)
+
+"""
+    timeseries_steps_particle_number(sim)
+
+Return the particle numbers across clones at each time step.
+"""
+function timeseries_steps_particle_number(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    nums = [timestep_particle_number(sim, i) for i in eachindex(sim[1].t)]
+    return DiffEqArray(nums, sim[1].t)
+end
+
+timeseries_steps_particle_number(sim) = timeseries_steps_particle_number(sim.u)
+
+"""
+    timeseries_steps_particle_number_mean(sim)
+
+Return the time series of mean particle number across clones.
+"""
+function timeseries_steps_particle_number_mean(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    means = [mean(timestep_particle_number(sim, i)) for i in eachindex(sim[1].t)]
+    return DiffEqArray(means, sim[1].t)
+end
+
+timeseries_steps_particle_number_mean(sim) = timeseries_steps_particle_number_mean(sim.u)
+
+"""
+    timeseries_steps_particle_number_var(sim)
+
+Return the time series of particle-number variance across clones.
+"""
+function timeseries_steps_particle_number_var(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    vars = [var(timestep_particle_number(sim, i)) for i in eachindex(sim[1].t)]
+    return DiffEqArray(vars, sim[1].t)
+end
+
+timeseries_steps_particle_number_var(sim) = timeseries_steps_particle_number_var(sim.u)
+
+"""
+    timestep_clonal_mean(sim, i)
+
+Compute clonal means at time step `i`, defined as the cross-clone mean reduced state
+divided by the cross-clone mean particle number.
+"""
+function timestep_clonal_mean(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    X = _timestep_state_matrix(sim, i)
+    N = _particle_numbers_at_timestep(sim, i)
+    return _clonal_mean_from_state_and_counts(X, N)
+end
+
+timestep_clonal_mean(sim, i) = timestep_clonal_mean(sim.u, i)
+
+"""
+    timeseries_steps_clonal_mean(sim)
+
+Compute clonal means at each time step.
+"""
+function timeseries_steps_clonal_mean(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    means = [timestep_clonal_mean(sim, i) for i in eachindex(sim[1].t)]
+    return DiffEqArray(means, sim[1].t)
+end
+
+timeseries_steps_clonal_mean(sim) = timeseries_steps_clonal_mean(sim.u)
+
+"""
+    timestep_clonal_intrinsic_crosscov(sim, i)
+
+Compute intrinsic clonal cross-covariance at time step `i` by subtracting
+`μμ' * var(N)` from the clonal cross-covariance, where `μ` is the clonal mean vector
+and `N` the particle number across clones.
+"""
+function timestep_clonal_intrinsic_crosscov(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    X = _timestep_state_matrix(sim, i)
+    N = _particle_numbers_at_timestep(sim, i)
+    return _clonal_intrinsic_crosscov_from_state_and_counts(X, N)
+end
+
+timestep_clonal_intrinsic_crosscov(sim, i) = timestep_clonal_intrinsic_crosscov(sim.u, i)
+
+"""
+    timeseries_steps_clonal_intrinsic_crosscov(sim)
+
+Compute intrinsic clonal cross-covariance at each time step.
+"""
+function timeseries_steps_clonal_intrinsic_crosscov(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    covs = [timestep_clonal_intrinsic_crosscov(sim, i) for i in eachindex(sim[1].t)]
+    return DiffEqArray(covs, sim[1].t)
+end
+
+timeseries_steps_clonal_intrinsic_crosscov(sim) = timeseries_steps_clonal_intrinsic_crosscov(sim.u)
+
+"""
+    timestep_clonal_intrinsic_var(sim, i)
+
+Compute intrinsic clonal variances at time step `i`.
+"""
+function timestep_clonal_intrinsic_var(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    X = _timestep_state_matrix(sim, i)
+    N = _particle_numbers_at_timestep(sim, i)
+    return _clonal_intrinsic_var_from_state_and_counts(X, N)
+end
+
+timestep_clonal_intrinsic_var(sim, i) = timestep_clonal_intrinsic_var(sim.u, i)
+
+"""
+    timeseries_steps_clonal_intrinsic_var(sim)
+
+Compute intrinsic clonal variances at each time step.
+"""
+function timeseries_steps_clonal_intrinsic_var(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    vars = [timestep_clonal_intrinsic_var(sim, i) for i in eachindex(sim[1].t)]
+    return DiffEqArray(vars, sim[1].t)
+end
+
+timeseries_steps_clonal_intrinsic_var(sim) = timeseries_steps_clonal_intrinsic_var(sim.u)
+
 function _crosscor_from_matrix(X::AbstractMatrix)
     C = reshape(_crosscov_from_matrix(X), size(X, 1), size(X, 1))
     stds = sqrt.(diag(C))
@@ -262,6 +406,55 @@ function _bootstrap_timeseries_steps(sim::AbstractVector{<:ReducedBranchingProce
     upper = similar(expected)
     for (i, X) in pairs(state_matrices)
         bs = bootstrap(sampled_idxs -> matrix_statistic(X[:, sampled_idxs]), idxs, sampling)
+        expected_i = Vector{Float64}(undef, nvar(bs))
+        lower_i = Vector{Float64}(undef, nvar(bs))
+        upper_i = Vector{Float64}(undef, nvar(bs))
+        for j in 1:nvar(bs)
+            strap_j = straps(bs, j)
+            if any(isnan, strap_j)
+                expected_i[j] = NaN
+                lower_i[j] = NaN
+                upper_i[j] = NaN
+            else
+                ci = confint(bs, cim, j)
+                expected_i[j] = mean(strap_j)
+                lower_i[j] = ci[2]
+                upper_i[j] = ci[3]
+            end
+        end
+        expected[i] = expected_i
+        lower[i] = lower_i
+        upper[i] = upper_i
+    end
+    return BootstrappedTimeSeriesSolution(
+        expected,
+        t,
+        lower,
+        upper;
+        statistic=label,
+        sampling=sampling,
+        confint_method=cim
+    )
+end
+
+function _bootstrap_timeseries_steps_with_particles(sim::AbstractVector{<:ReducedBranchingProcessSolution},
+                                                    matrix_particle_statistic::Function,
+                                                    label;
+                                                    sampling=BasicSampling(1000),
+                                                    confint_method=BasicConfInt,
+                                                    level=0.95)
+    t = sim[1].t
+    cim = confint_method isa Bootstrap.ConfIntMethod ? confint_method : confint_method(level)
+    idxs = collect(eachindex(sim))
+    state_matrices = [_timestep_state_matrix(sim, i) for i in eachindex(t)]
+    particle_numbers = [_particle_numbers_at_timestep(sim, i) for i in eachindex(t)]
+    expected = Vector{Vector{Float64}}(undef, length(t))
+    lower = similar(expected)
+    upper = similar(expected)
+    for i in eachindex(t)
+        X = state_matrices[i]
+        N = particle_numbers[i]
+        bs = bootstrap(sampled_idxs -> matrix_particle_statistic(X[:, sampled_idxs], N[sampled_idxs]), idxs, sampling)
         expected_i = Vector{Float64}(undef, nvar(bs))
         lower_i = Vector{Float64}(undef, nvar(bs))
         upper_i = Vector{Float64}(undef, nvar(bs))
@@ -429,6 +622,146 @@ timeseries_steps_crosscov_variance_explained_bootstrap(sim;
                                                            sampling=sampling,
                                                            confint_method=confint_method,
                                                            level=level)
+
+"""
+    timeseries_steps_particle_number_mean_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of mean particle number across clones.
+"""
+function timeseries_steps_particle_number_mean_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                                         sampling=BasicSampling(1000),
+                                                         confint_method=BasicConfInt,
+                                                         level=0.95)
+    return _bootstrap_timeseries_steps_with_particles(
+        sim,
+        (X, N) -> [mean(N)],
+        :particle_number_mean;
+        sampling=sampling,
+        confint_method=confint_method,
+        level=level
+    )
+end
+
+timeseries_steps_particle_number_mean_bootstrap(sim;
+                                                sampling=BasicSampling(1000),
+                                                confint_method=BasicConfInt,
+                                                level=0.95) =
+    timeseries_steps_particle_number_mean_bootstrap(sim.u;
+                                                    sampling=sampling,
+                                                    confint_method=confint_method,
+                                                    level=level)
+
+"""
+    timeseries_steps_particle_number_var_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of particle-number variance across clones.
+"""
+function timeseries_steps_particle_number_var_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                                        sampling=BasicSampling(1000),
+                                                        confint_method=BasicConfInt,
+                                                        level=0.95)
+    return _bootstrap_timeseries_steps_with_particles(
+        sim,
+        (X, N) -> [var(N)],
+        :particle_number_var;
+        sampling=sampling,
+        confint_method=confint_method,
+        level=level
+    )
+end
+
+timeseries_steps_particle_number_var_bootstrap(sim;
+                                               sampling=BasicSampling(1000),
+                                               confint_method=BasicConfInt,
+                                               level=0.95) =
+    timeseries_steps_particle_number_var_bootstrap(sim.u;
+                                                   sampling=sampling,
+                                                   confint_method=confint_method,
+                                                   level=level)
+
+"""
+    timeseries_steps_clonal_mean_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of clonal means.
+"""
+function timeseries_steps_clonal_mean_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                                sampling=BasicSampling(1000),
+                                                confint_method=BasicConfInt,
+                                                level=0.95)
+    return _bootstrap_timeseries_steps_with_particles(
+        sim,
+        _clonal_mean_from_state_and_counts,
+        :clonal_mean;
+        sampling=sampling,
+        confint_method=confint_method,
+        level=level
+    )
+end
+
+timeseries_steps_clonal_mean_bootstrap(sim;
+                                       sampling=BasicSampling(1000),
+                                       confint_method=BasicConfInt,
+                                       level=0.95) =
+    timeseries_steps_clonal_mean_bootstrap(sim.u;
+                                           sampling=sampling,
+                                           confint_method=confint_method,
+                                           level=level)
+
+"""
+    timeseries_steps_clonal_intrinsic_crosscov_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of intrinsic clonal cross-covariance vectors.
+"""
+function timeseries_steps_clonal_intrinsic_crosscov_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                                              sampling=BasicSampling(1000),
+                                                              confint_method=BasicConfInt,
+                                                              level=0.95)
+    return _bootstrap_timeseries_steps_with_particles(
+        sim,
+        _clonal_intrinsic_crosscov_from_state_and_counts,
+        :clonal_intrinsic_crosscov;
+        sampling=sampling,
+        confint_method=confint_method,
+        level=level
+    )
+end
+
+timeseries_steps_clonal_intrinsic_crosscov_bootstrap(sim;
+                                                     sampling=BasicSampling(1000),
+                                                     confint_method=BasicConfInt,
+                                                     level=0.95) =
+    timeseries_steps_clonal_intrinsic_crosscov_bootstrap(sim.u;
+                                                         sampling=sampling,
+                                                         confint_method=confint_method,
+                                                         level=level)
+
+"""
+    timeseries_steps_clonal_intrinsic_var_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of intrinsic clonal variances.
+"""
+function timeseries_steps_clonal_intrinsic_var_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                                         sampling=BasicSampling(1000),
+                                                         confint_method=BasicConfInt,
+                                                         level=0.95)
+    return _bootstrap_timeseries_steps_with_particles(
+        sim,
+        _clonal_intrinsic_var_from_state_and_counts,
+        :clonal_intrinsic_var;
+        sampling=sampling,
+        confint_method=confint_method,
+        level=level
+    )
+end
+
+timeseries_steps_clonal_intrinsic_var_bootstrap(sim;
+                                                sampling=BasicSampling(1000),
+                                                confint_method=BasicConfInt,
+                                                level=0.95) =
+    timeseries_steps_clonal_intrinsic_var_bootstrap(sim.u;
+                                                    sampling=sampling,
+                                                    confint_method=confint_method,
+                                                    level=level)
 
 """
     fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)

@@ -529,6 +529,141 @@ end
     end
 end
 
+@testset "clonal intrinsic and particle-number utility functions" begin
+    using Bootstrap
+    using Distributions
+    using JumpProcesses
+    using RecursiveArrayTools
+    using SciMLBase
+    using Statistics
+
+    Random.seed!(9876)
+    u0 = [1.0, 2.0]
+    tspan = (0.0, 3.0)
+    p = [0.5]
+    rate(u, p, t) = p[1]
+    function affect!(integrator)
+        integrator.u[1] += 1.0
+        integrator.u[2] += integrator.u[1]
+    end
+    jump = ConstantRateJump(rate, affect!)
+    disc_prob = DiscreteProblem(u0, tspan, p)
+    jump_prob = JumpProblem(disc_prob, Direct(), jump)
+    bp = ConstantRateBranchingProblem(jump_prob, 1.0, 2)
+    u0_dist = product_distribution([Dirac(1.0), Dirac(2.0)])
+    results = fluctuation_experiment(bp, u0_dist, 12;
+                                     alg=SSAStepper(),
+                                     ensemble_alg=EnsembleSerial())
+
+    nsteps = length(results.u[1].t)
+    d = length(results.u[1].u[1])
+
+    @testset "non-bootstrapped formulas" begin
+        i = 1
+        X = reduce(hcat, [sol.u[i] for sol in results.u])
+        N = Float64[sol.nparticles[i] for sol in results.u]
+        μ = vec(mean(X, dims=2)) ./ mean(N)
+        C = cov(X, dims=2)
+        Cint = C .- (μ * μ') .* var(N)
+
+        @test timestep_particle_number(results, i) == N
+        @test timestep_clonal_mean(results, i) ≈ μ
+        @test timestep_clonal_intrinsic_crosscov(results, i) ≈ Cint[:]
+        @test timestep_clonal_intrinsic_var(results, i) ≈ diag(Cint)
+
+        nparticles_ts = timeseries_steps_particle_number(results)
+        @test nparticles_ts isa RecursiveArrayTools.AbstractDiffEqArray
+        @test nparticles_ts.t == results.u[1].t
+        @test length(nparticles_ts.u) == nsteps
+        @test all(length(v) == length(results.u) for v in nparticles_ts.u)
+
+        meanN = timeseries_steps_particle_number_mean(results)
+        varN = timeseries_steps_particle_number_var(results)
+        @test meanN.t == results.u[1].t
+        @test varN.t == results.u[1].t
+        @test meanN.u[1] ≈ mean(N)
+        @test varN.u[1] ≈ var(N)
+
+        @test timestep_particle_number(results.u, i) == timestep_particle_number(results, i)
+        @test timestep_clonal_mean(results.u, i) == timestep_clonal_mean(results, i)
+        @test timestep_clonal_intrinsic_crosscov(results.u, i) == timestep_clonal_intrinsic_crosscov(results, i)
+        @test timestep_clonal_intrinsic_var(results.u, i) == timestep_clonal_intrinsic_var(results, i)
+        @test timeseries_steps_clonal_mean(results.u).u == timeseries_steps_clonal_mean(results).u
+        @test timeseries_steps_clonal_intrinsic_crosscov(results.u).u == timeseries_steps_clonal_intrinsic_crosscov(results).u
+        @test timeseries_steps_clonal_intrinsic_var(results.u).u == timeseries_steps_clonal_intrinsic_var(results).u
+    end
+
+    @testset "bootstrapped formulas" begin
+        i = 1
+        X = reduce(hcat, [sol.u[i] for sol in results.u])
+        N = Float64[sol.nparticles[i] for sol in results.u]
+        idxs = collect(eachindex(results.u))
+
+        Random.seed!(111)
+        summary = timeseries_steps_clonal_mean_bootstrap(results;
+                                                         sampling=BasicSampling(25),
+                                                         confint_method=BasicConfInt,
+                                                         level=0.9)
+        @test summary isa RecursiveArrayTools.AbstractDiffEqArray
+        @test summary.statistic == :clonal_mean
+        @test summary.t == results.u[1].t
+        @test length(summary.u) == nsteps
+        @test length(summary.u[1]) == d
+
+        clonal_mean_stat(sampled_idxs) = vec(mean(X[:, sampled_idxs], dims=2)) ./ mean(N[sampled_idxs])
+        Random.seed!(111)
+        bs_mean = bootstrap(clonal_mean_stat, idxs, BasicSampling(25))
+        cis_mean = confint(bs_mean, BasicConfInt(0.9))
+        expected_mean = [mean(straps(bs_mean, j)) for j in 1:Bootstrap.nvar(bs_mean)]
+        lower_mean = [ci[2] for ci in cis_mean]
+        upper_mean = [ci[3] for ci in cis_mean]
+        @test summary.u[1] == expected_mean
+        @test summary.lower[1] == lower_mean
+        @test summary.upper[1] == upper_mean
+
+        Random.seed!(222)
+        summary_var = timeseries_steps_particle_number_var_bootstrap(results;
+                                                                     sampling=BasicSampling(30),
+                                                                     confint_method=BasicConfInt,
+                                                                     level=0.85)
+        @test summary_var.statistic == :particle_number_var
+        @test length(summary_var.u[1]) == 1
+
+        npvar_stat(sampled_idxs) = [var(N[sampled_idxs])]
+        Random.seed!(222)
+        bs_var = bootstrap(npvar_stat, idxs, BasicSampling(30))
+        cis_var = confint(bs_var, BasicConfInt(0.85))
+        expected_var = [mean(straps(bs_var, 1))]
+        @test summary_var.u[1] == expected_var
+        @test summary_var.lower[1] == [cis_var[1][2]]
+        @test summary_var.upper[1] == [cis_var[1][3]]
+
+        Random.seed!(333)
+        summary_cov_ens = timeseries_steps_clonal_intrinsic_crosscov_bootstrap(results;
+                                                                                sampling=BasicSampling(20),
+                                                                                confint_method=PercentileConfInt,
+                                                                                level=0.8)
+        Random.seed!(333)
+        summary_cov_vec = timeseries_steps_clonal_intrinsic_crosscov_bootstrap(results.u;
+                                                                                sampling=BasicSampling(20),
+                                                                                confint_method=PercentileConfInt,
+                                                                                level=0.8)
+        @test summary_cov_ens.statistic == :clonal_intrinsic_crosscov
+        @test isequal(summary_cov_ens.u, summary_cov_vec.u)
+        @test isequal(summary_cov_ens.lower, summary_cov_vec.lower)
+        @test isequal(summary_cov_ens.upper, summary_cov_vec.upper)
+        @test length(summary_cov_ens.u[1]) == d^2
+
+        Random.seed!(444)
+        summary_intrinsic_var = timeseries_steps_clonal_intrinsic_var_bootstrap(results;
+                                                                                 sampling=BasicSampling(20),
+                                                                                 confint_method=BasicConfInt,
+                                                                                 level=0.8)
+        @test summary_intrinsic_var.statistic == :clonal_intrinsic_var
+        @test length(summary_intrinsic_var.u[1]) == d
+    end
+end
+
 @testset "fluctuation_experiment tests" begin
     using Distributions
     using SciMLBase
