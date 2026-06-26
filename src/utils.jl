@@ -329,6 +329,11 @@ timeseries_steps_clonal_mean(sim) = timeseries_steps_clonal_mean(sim.u)
 Compute intrinsic clonal cross-covariance at time step `i` by subtracting
 `μμ' * var(N)` from the clonal cross-covariance, where `μ` is the clonal mean vector
 and `N` the particle number across clones.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
 """
 function timestep_clonal_intrinsic_crosscov(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
     X = _timestep_state_matrix(sim, i)
@@ -342,6 +347,11 @@ timestep_clonal_intrinsic_crosscov(sim, i) = timestep_clonal_intrinsic_crosscov(
     timeseries_steps_clonal_intrinsic_crosscov(sim)
 
 Compute intrinsic clonal cross-covariance at each time step.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
 """
 function timeseries_steps_clonal_intrinsic_crosscov(sim::AbstractVector{<:ReducedBranchingProcessSolution})
     covs = [timestep_clonal_intrinsic_crosscov(sim, i) for i in eachindex(sim[1].t)]
@@ -354,6 +364,11 @@ timeseries_steps_clonal_intrinsic_crosscov(sim) = timeseries_steps_clonal_intrin
     timestep_clonal_intrinsic_var(sim, i)
 
 Compute intrinsic clonal variances at time step `i`.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
 """
 function timestep_clonal_intrinsic_var(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
     X = _timestep_state_matrix(sim, i)
@@ -367,6 +382,11 @@ timestep_clonal_intrinsic_var(sim, i) = timestep_clonal_intrinsic_var(sim.u, i)
     timeseries_steps_clonal_intrinsic_var(sim)
 
 Compute intrinsic clonal variances at each time step.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
 """
 function timeseries_steps_clonal_intrinsic_var(sim::AbstractVector{<:ReducedBranchingProcessSolution})
     vars = [timestep_clonal_intrinsic_var(sim, i) for i in eachindex(sim[1].t)]
@@ -711,6 +731,11 @@ timeseries_steps_clonal_mean_bootstrap(sim;
     timeseries_steps_clonal_intrinsic_crosscov_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
 
 Bootstrap the time series of intrinsic clonal cross-covariance vectors.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
 """
 function timeseries_steps_clonal_intrinsic_crosscov_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
                                                               sampling=BasicSampling(1000),
@@ -739,6 +764,11 @@ timeseries_steps_clonal_intrinsic_crosscov_bootstrap(sim;
     timeseries_steps_clonal_intrinsic_var_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
 
 Bootstrap the time series of intrinsic clonal variances.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
 """
 function timeseries_steps_clonal_intrinsic_var_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
                                                          sampling=BasicSampling(1000),
