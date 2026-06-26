@@ -562,7 +562,7 @@ end
         i = 1
         X = reduce(hcat, [sol.u[i] for sol in results.u])
         N = Float64[sol.nparticles[i] for sol in results.u]
-        μ = vec(mean(X, dims=2)) ./ mean(N)
+        μ = vec(mean(X ./ permutedims(N), dims=2))
         C = cov(X, dims=2)
         Cint = C .- (μ * μ') .* var(N)
 
@@ -610,7 +610,7 @@ end
         @test length(summary.u) == nsteps
         @test length(summary.u[1]) == d
 
-        clonal_mean_stat(sampled_idxs) = vec(mean(X[:, sampled_idxs], dims=2)) ./ mean(N[sampled_idxs])
+        clonal_mean_stat(sampled_idxs) = vec(mean(X[:, sampled_idxs] ./ permutedims(N[sampled_idxs]), dims=2))
         Random.seed!(111)
         bs_mean = bootstrap(clonal_mean_stat, idxs, BasicSampling(25))
         cis_mean = confint(bs_mean, BasicConfInt(0.9))

@@ -239,7 +239,7 @@ function _particle_numbers_at_timestep(sim::AbstractVector{<:ReducedBranchingPro
     return Float64[getindex(n, i) for n in nparticles]
 end
 
-_clonal_mean_from_state_and_counts(X::AbstractMatrix, N::AbstractVector) = vec(mean(X, dims=2)) ./ mean(N)
+_clonal_mean_from_state_and_counts(X::AbstractMatrix, N::AbstractVector) = vec(mean(X ./ permutedims(N), dims=2))
 
 function _clonal_intrinsic_crosscov_from_state_and_counts(X::AbstractMatrix, N::AbstractVector)
     μ = _clonal_mean_from_state_and_counts(X, N)
