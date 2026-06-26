@@ -757,6 +757,7 @@ end
     using Distributions
     using SciMLBase
     using JumpProcesses
+    using RecursiveArrayTools
 
     u0 = [1]
     tspan = (0.0, 3.0)
@@ -826,6 +827,63 @@ end
         sol2 = results.u[2]
         ret = rescale!(sol2, t -> 1.0)
         @test ret === sol2
+    end
+
+    @testset "rescale and rescale! for DiffEqArray" begin
+        ts = DiffEqArray([[1.0, 2.0], [3.0, 4.0]], [0.0, 1.0])
+
+        ts_rescaled = rescale(ts, t -> 2.0 + t)
+        @test ts_rescaled.t == ts.t
+        @test ts_rescaled.u[1] ≈ [2.0, 4.0]
+        @test ts_rescaled.u[2] ≈ [9.0, 12.0]
+
+        ts_copy = DiffEqArray(copy(ts.u), ts.t)
+        ret = rescale!(ts_copy, t -> 2.0 + t)
+        @test ret === ts_copy
+        @test ts_copy.u[1] ≈ [2.0, 4.0]
+        @test ts_copy.u[2] ≈ [9.0, 12.0]
+    end
+
+    @testset "rescale and rescale! for BootstrappedTimeSeriesSolution" begin
+        boot = BootstrappedTimeSeriesSolution(
+            [[1.0, 2.0], [3.0, 4.0]],
+            [0.0, 1.0],
+            [[0.5, 1.0], [1.5, 2.0]],
+            [[1.5, 3.0], [4.5, 6.0]];
+            statistic=:crosscov,
+            sampling=:basic,
+            confint_method=:percentile
+        )
+
+        boot_rescaled = rescale(boot, t -> 2.0 + t)
+        @test boot_rescaled.t == boot.t
+        @test boot_rescaled.u[1] ≈ [2.0, 4.0]
+        @test boot_rescaled.u[2] ≈ [9.0, 12.0]
+        @test boot_rescaled.lower[1] ≈ [1.0, 2.0]
+        @test boot_rescaled.lower[2] ≈ [4.5, 6.0]
+        @test boot_rescaled.upper[1] ≈ [3.0, 6.0]
+        @test boot_rescaled.upper[2] ≈ [13.5, 18.0]
+        @test boot_rescaled.statistic === boot.statistic
+        @test boot_rescaled.sampling === boot.sampling
+        @test boot_rescaled.confint_method === boot.confint_method
+
+        boot_copy = BootstrappedTimeSeriesSolution(
+            copy(boot.u),
+            boot.t,
+            copy(boot.lower),
+            copy(boot.upper);
+            statistic=boot.statistic,
+            sampling=boot.sampling,
+            confint_method=boot.confint_method
+        )
+        ret = rescale!(boot_copy, t -> 2.0 + t)
+        @test ret === boot_copy
+        @test boot_copy.u[1] ≈ [2.0, 4.0]
+        @test boot_copy.u[2] ≈ [9.0, 12.0]
+        @test boot_copy.lower[1] ≈ [1.0, 2.0]
+        @test boot_copy.lower[2] ≈ [4.5, 6.0]
+        @test boot_copy.upper[1] ≈ [3.0, 6.0]
+        @test boot_copy.upper[2] ≈ [13.5, 18.0]
     end
 end
 
