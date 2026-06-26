@@ -148,6 +148,43 @@ function rescale!(sol::ReducedBranchingProcessSolution, f)
     return sol
 end
 
+function rescale(sol::DiffEqArray, f)
+    u_new = [f(t) .* u for (t, u) in zip(sol.t, sol.u)]
+    return DiffEqArray(u_new, sol.t)
+end
+
+function rescale!(sol::DiffEqArray, f)
+    Threads.@threads for i in eachindex(sol.t)
+        sol.u[i] = f(sol.t[i]) .* sol.u[i]
+    end
+    return sol
+end
+
+function rescale(sol::BootstrappedTimeSeriesSolution, f)
+    u_new = [f(t) .* u for (t, u) in zip(sol.t, sol.u)]
+    lower_new = [f(t) .* lower for (t, lower) in zip(sol.t, sol.lower)]
+    upper_new = [f(t) .* upper for (t, upper) in zip(sol.t, sol.upper)]
+    return BootstrappedTimeSeriesSolution(
+        u_new,
+        sol.t,
+        lower_new,
+        upper_new;
+        statistic=sol.statistic,
+        sampling=sol.sampling,
+        confint_method=sol.confint_method
+    )
+end
+
+function rescale!(sol::BootstrappedTimeSeriesSolution, f)
+    Threads.@threads for i in eachindex(sol.t)
+        scale = f(sol.t[i])
+        sol.u[i] = scale .* sol.u[i]
+        sol.lower[i] = scale .* sol.lower[i]
+        sol.upper[i] = scale .* sol.upper[i]
+    end
+    return sol
+end
+
 
 """
     get_timespan(tree::BranchingProcessSolution)
