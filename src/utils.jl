@@ -161,9 +161,10 @@ function rescale!(sol::DiffEqArray, f)
 end
 
 function rescale(sol::BootstrappedTimeSeriesSolution, f)
-    u_new = [f(t) .* u for (t, u) in zip(sol.t, sol.u)]
-    lower_new = [f(t) .* lower for (t, lower) in zip(sol.t, sol.lower)]
-    upper_new = [f(t) .* upper for (t, upper) in zip(sol.t, sol.upper)]
+     scales = map(f, sol.t)
+     u_new = [s .* u for (s, u) in zip(scales, sol.u)]
+     lower_new = [s .* lower for (s, lower) in zip(scales, sol.lower)]
+     upper_new = [s .* upper for (s, upper) in zip(scales, sol.upper)]
     return BootstrappedTimeSeriesSolution(
         u_new,
         sol.t,
