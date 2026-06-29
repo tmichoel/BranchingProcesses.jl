@@ -433,6 +433,53 @@ end
 
 timeseries_steps_clonal_intrinsic_var(sim) = timeseries_steps_clonal_intrinsic_var(sim.u)
 
+function _clonal_intrinsic_crosscor_from_state_and_counts(X::AbstractMatrix, N::AbstractVector)
+    Cint = reshape(_clonal_intrinsic_crosscov_from_state_and_counts(X, N), size(X, 1), size(X, 1))
+    stds = sqrt.(max.(diag(Cint), 0))
+    denom = stds * stds'
+    R = Cint ./ denom
+    R[denom .<= 0] .= NaN
+    return R[:]
+end
+
+"""
+    timestep_clonal_intrinsic_crosscor(sim, i)
+
+Compute intrinsic clonal cross-correlations at time step `i`. The intrinsic
+cross-correlation matrix is obtained by normalizing the intrinsic cross-covariance
+matrix by the product of intrinsic standard deviations. Entries where the intrinsic
+variance of a variable is non-positive are set to `NaN`.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
+"""
+function timestep_clonal_intrinsic_crosscor(sim::AbstractVector{<:ReducedBranchingProcessSolution}, i)
+    X = _timestep_state_matrix(sim, i)
+    N = _particle_numbers_at_timestep(sim, i)
+    return _clonal_intrinsic_crosscor_from_state_and_counts(X, N)
+end
+
+timestep_clonal_intrinsic_crosscor(sim, i) = timestep_clonal_intrinsic_crosscor(sim.u, i)
+
+"""
+    timeseries_steps_clonal_intrinsic_crosscor(sim)
+
+Compute intrinsic clonal cross-correlations at each time step.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
+"""
+function timeseries_steps_clonal_intrinsic_crosscor(sim::AbstractVector{<:ReducedBranchingProcessSolution})
+    cors = [timestep_clonal_intrinsic_crosscor(sim, i) for i in eachindex(sim[1].t)]
+    return DiffEqArray(cors, sim[1].t)
+end
+
+timeseries_steps_clonal_intrinsic_crosscor(sim) = timeseries_steps_clonal_intrinsic_crosscor(sim.u)
+
 function _crosscor_from_matrix(X::AbstractMatrix)
     C = reshape(_crosscov_from_matrix(X), size(X, 1), size(X, 1))
     stds = sqrt.(diag(C))
@@ -830,6 +877,39 @@ timeseries_steps_clonal_intrinsic_var_bootstrap(sim;
                                                     sampling=sampling,
                                                     confint_method=confint_method,
                                                     level=level)
+
+"""
+    timeseries_steps_clonal_intrinsic_crosscor_bootstrap(sim; sampling=BasicSampling(1000), confint_method=BasicConfInt, level=0.95)
+
+Bootstrap the time series of intrinsic clonal cross-correlation vectors.
+
+!!! warning
+    This intrinsic subtraction is mathematically valid only when the reduced branching
+    process solutions were obtained with `reduction=sum` and no rescaling function
+    (`rescale=nothing`) was applied.
+"""
+function timeseries_steps_clonal_intrinsic_crosscor_bootstrap(sim::AbstractVector{<:ReducedBranchingProcessSolution};
+                                                              sampling=BasicSampling(1000),
+                                                              confint_method=BasicConfInt,
+                                                              level=0.95)
+    return _bootstrap_timeseries_steps_with_particles(
+        sim,
+        _clonal_intrinsic_crosscor_from_state_and_counts,
+        :clonal_intrinsic_crosscor;
+        sampling=sampling,
+        confint_method=confint_method,
+        level=level
+    )
+end
+
+timeseries_steps_clonal_intrinsic_crosscor_bootstrap(sim;
+                                                     sampling=BasicSampling(1000),
+                                                     confint_method=BasicConfInt,
+                                                     level=0.95) =
+    timeseries_steps_clonal_intrinsic_crosscor_bootstrap(sim.u;
+                                                         sampling=sampling,
+                                                         confint_method=confint_method,
+                                                         level=level)
 
 """
     fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)
