@@ -591,6 +591,19 @@ end
         @test timeseries_steps_clonal_mean(results.u).u == timeseries_steps_clonal_mean(results).u
         @test timeseries_steps_clonal_intrinsic_crosscov(results.u).u == timeseries_steps_clonal_intrinsic_crosscov(results).u
         @test timeseries_steps_clonal_intrinsic_var(results.u).u == timeseries_steps_clonal_intrinsic_var(results).u
+
+        # intrinsic cross-correlations
+        stds_int = sqrt.(max.(diag(Cint), 0))
+        Rint = Cint ./ (stds_int * stds_int')
+        Rint[stds_int * stds_int' .<= 0] .= NaN
+        @test isequal(timestep_clonal_intrinsic_crosscor(results, i), Rint[:])
+        @test isequal(timestep_clonal_intrinsic_crosscor(results.u, i), timestep_clonal_intrinsic_crosscor(results, i))
+
+        cor_ts = timeseries_steps_clonal_intrinsic_crosscor(results)
+        @test cor_ts isa RecursiveArrayTools.AbstractDiffEqArray
+        @test cor_ts.t == results.u[1].t
+        @test length(cor_ts.u[1]) == d^2
+        @test isequal(timeseries_steps_clonal_intrinsic_crosscor(results.u).u, timeseries_steps_clonal_intrinsic_crosscor(results).u)
     end
 
     @testset "bootstrapped formulas" begin
@@ -661,6 +674,22 @@ end
                                                                                  level=0.8)
         @test summary_intrinsic_var.statistic == :clonal_intrinsic_var
         @test length(summary_intrinsic_var.u[1]) == d
+
+        Random.seed!(555)
+        summary_cor_ens = timeseries_steps_clonal_intrinsic_crosscor_bootstrap(results;
+                                                                                sampling=BasicSampling(20),
+                                                                                confint_method=PercentileConfInt,
+                                                                                level=0.8)
+        Random.seed!(555)
+        summary_cor_vec = timeseries_steps_clonal_intrinsic_crosscor_bootstrap(results.u;
+                                                                                sampling=BasicSampling(20),
+                                                                                confint_method=PercentileConfInt,
+                                                                                level=0.8)
+        @test summary_cor_ens.statistic == :clonal_intrinsic_crosscor
+        @test isequal(summary_cor_ens.u, summary_cor_vec.u)
+        @test isequal(summary_cor_ens.lower, summary_cor_vec.lower)
+        @test isequal(summary_cor_ens.upper, summary_cor_vec.upper)
+        @test length(summary_cor_ens.u[1]) == d^2
     end
 end
 
