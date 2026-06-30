@@ -27,6 +27,8 @@ using Statistics
 # include files
 include("types.jl")
 include("solvers.jl")
+include("fluctuation_experiment.jl")
+include("timeseries_analysis.jl")
 include("spatial.jl")
 include("plot_recipes.jl")
 include("utils.jl")
