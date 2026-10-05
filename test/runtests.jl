@@ -567,9 +567,9 @@ end
         Cint = C .- (μ * μ') .* var(N)
 
         @test timestep_particle_number(results, i) == N
-        @test timestep_clonal_mean(results, i) ≈ μ
-        @test timestep_clonal_intrinsic_crosscov(results, i) ≈ Cint[:]
-        @test timestep_clonal_intrinsic_var(results, i) ≈ diag(Cint)
+        @test timestep_mean(results, i) ≈ μ
+        @test timestep_intrinsic_crosscov(results, i) ≈ Cint[:]
+        @test timestep_intrinsic_var(results, i) ≈ diag(Cint)
 
         nparticles_ts = timeseries_steps_particle_number(results)
         @test nparticles_ts isa RecursiveArrayTools.AbstractDiffEqArray
@@ -585,25 +585,25 @@ end
         @test varN.u[1] ≈ var(N)
 
         @test timestep_particle_number(results.u, i) == timestep_particle_number(results, i)
-        @test timestep_clonal_mean(results.u, i) == timestep_clonal_mean(results, i)
-        @test timestep_clonal_intrinsic_crosscov(results.u, i) == timestep_clonal_intrinsic_crosscov(results, i)
-        @test timestep_clonal_intrinsic_var(results.u, i) == timestep_clonal_intrinsic_var(results, i)
-        @test timeseries_steps_clonal_mean(results.u).u == timeseries_steps_clonal_mean(results).u
-        @test timeseries_steps_clonal_intrinsic_crosscov(results.u).u == timeseries_steps_clonal_intrinsic_crosscov(results).u
-        @test timeseries_steps_clonal_intrinsic_var(results.u).u == timeseries_steps_clonal_intrinsic_var(results).u
+        @test timestep_mean(results.u, i) == timestep_mean(results, i)
+        @test timestep_intrinsic_crosscov(results.u, i) == timestep_intrinsic_crosscov(results, i)
+        @test timestep_intrinsic_var(results.u, i) == timestep_intrinsic_var(results, i)
+        @test timeseries_steps_mean(results.u).u == timeseries_steps_mean(results).u
+        @test timeseries_steps_intrinsic_crosscov(results.u).u == timeseries_steps_intrinsic_crosscov(results).u
+        @test timeseries_steps_intrinsic_var(results.u).u == timeseries_steps_intrinsic_var(results).u
 
         # intrinsic cross-correlations
         stds_int = sqrt.(max.(diag(Cint), 0))
         Rint = Cint ./ (stds_int * stds_int')
         Rint[stds_int * stds_int' .<= 0] .= NaN
-        @test isequal(timestep_clonal_intrinsic_crosscor(results, i), Rint[:])
-        @test isequal(timestep_clonal_intrinsic_crosscor(results.u, i), timestep_clonal_intrinsic_crosscor(results, i))
+        @test isequal(timestep_intrinsic_crosscor(results, i), Rint[:])
+        @test isequal(timestep_intrinsic_crosscor(results.u, i), timestep_intrinsic_crosscor(results, i))
 
-        cor_ts = timeseries_steps_clonal_intrinsic_crosscor(results)
+        cor_ts = timeseries_steps_intrinsic_crosscor(results)
         @test cor_ts isa RecursiveArrayTools.AbstractDiffEqArray
         @test cor_ts.t == results.u[1].t
         @test length(cor_ts.u[1]) == d^2
-        @test isequal(timeseries_steps_clonal_intrinsic_crosscor(results.u).u, timeseries_steps_clonal_intrinsic_crosscor(results).u)
+        @test isequal(timeseries_steps_intrinsic_crosscor(results.u).u, timeseries_steps_intrinsic_crosscor(results).u)
     end
 
     @testset "bootstrapped formulas" begin
@@ -613,7 +613,7 @@ end
         idxs = collect(eachindex(results.u))
 
         Random.seed!(111)
-        summary = timeseries_steps_clonal_mean_bootstrap(results;
+        summary = timeseries_steps_mean_bootstrap(results;
                                                          sampling=BasicSampling(25),
                                                          confint_method=BasicConfInt,
                                                          level=0.9)
@@ -652,12 +652,12 @@ end
         @test summary_var.upper[1] == [cis_var[1][3]]
 
         Random.seed!(333)
-        summary_cov_ens = timeseries_steps_clonal_intrinsic_crosscov_bootstrap(results;
+        summary_cov_ens = timeseries_steps_intrinsic_crosscov_bootstrap(results;
                                                                                 sampling=BasicSampling(20),
                                                                                 confint_method=PercentileConfInt,
                                                                                 level=0.8)
         Random.seed!(333)
-        summary_cov_vec = timeseries_steps_clonal_intrinsic_crosscov_bootstrap(results.u;
+        summary_cov_vec = timeseries_steps_intrinsic_crosscov_bootstrap(results.u;
                                                                                 sampling=BasicSampling(20),
                                                                                 confint_method=PercentileConfInt,
                                                                                 level=0.8)
@@ -668,7 +668,7 @@ end
         @test length(summary_cov_ens.u[1]) == d^2
 
         Random.seed!(444)
-        summary_intrinsic_var = timeseries_steps_clonal_intrinsic_var_bootstrap(results;
+        summary_intrinsic_var = timeseries_steps_intrinsic_var_bootstrap(results;
                                                                                  sampling=BasicSampling(20),
                                                                                  confint_method=BasicConfInt,
                                                                                  level=0.8)
@@ -676,12 +676,12 @@ end
         @test length(summary_intrinsic_var.u[1]) == d
 
         Random.seed!(555)
-        summary_cor_ens = timeseries_steps_clonal_intrinsic_crosscor_bootstrap(results;
+        summary_cor_ens = timeseries_steps_intrinsic_crosscor_bootstrap(results;
                                                                                 sampling=BasicSampling(20),
                                                                                 confint_method=PercentileConfInt,
                                                                                 level=0.8)
         Random.seed!(555)
-        summary_cor_vec = timeseries_steps_clonal_intrinsic_crosscor_bootstrap(results.u;
+        summary_cor_vec = timeseries_steps_intrinsic_crosscor_bootstrap(results.u;
                                                                                 sampling=BasicSampling(20),
                                                                                 confint_method=PercentileConfInt,
                                                                                 level=0.8)
