@@ -34,6 +34,11 @@ timeseries_steps_particle_number_var_bootstrap
 timeseries_steps_mean_bootstrap
 timeseries_steps_intrinsic_crosscov_bootstrap
 timeseries_steps_intrinsic_var_bootstrap
+timeseries_steps_crosscov_bootstrap
+timeseries_steps_crosscor_bootstrap
+timeseries_steps_intrinsic_crosscor
+timeseries_steps_intrinsic_crosscor_bootstrap
+timestep_intrinsic_crosscor
 ```
 
 ```@docs
