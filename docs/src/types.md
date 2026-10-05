@@ -17,4 +17,5 @@ BranchingProcessNode
 AbstractTrees.children
 AbstractTrees.nodevalue
 ReducedBranchingProcessSolution
+BootstrappedTimeSeriesSolution
 ```
