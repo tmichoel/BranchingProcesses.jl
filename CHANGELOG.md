@@ -23,6 +23,9 @@
 ## Compatibility Updates
 
 - Added `Bootstrap` as a runtime dependency for the bootstrap summaries.
+
+## Internal Changes
+
 - Updated the CI Julia version to 1.13, while retaining the prerelease test job.
 
 ## Merged pull requests
