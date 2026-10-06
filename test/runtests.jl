@@ -618,7 +618,7 @@ end
                                                          confint_method=BasicConfInt,
                                                          level=0.9)
         @test summary isa RecursiveArrayTools.AbstractDiffEqArray
-        @test summary.statistic == :clonal_mean
+        @test summary.statistic == :mean
         @test summary.t == results.u[1].t
         @test length(summary.u) == nsteps
         @test length(summary.u[1]) == d
@@ -661,7 +661,7 @@ end
                                                                                 sampling=BasicSampling(20),
                                                                                 confint_method=PercentileConfInt,
                                                                                 level=0.8)
-        @test summary_cov_ens.statistic == :clonal_intrinsic_crosscov
+        @test summary_cov_ens.statistic == :intrinsic_crosscov
         @test isequal(summary_cov_ens.u, summary_cov_vec.u)
         @test isequal(summary_cov_ens.lower, summary_cov_vec.lower)
         @test isequal(summary_cov_ens.upper, summary_cov_vec.upper)
@@ -672,7 +672,7 @@ end
                                                                                  sampling=BasicSampling(20),
                                                                                  confint_method=BasicConfInt,
                                                                                  level=0.8)
-        @test summary_intrinsic_var.statistic == :clonal_intrinsic_var
+        @test summary_intrinsic_var.statistic == :intrinsic_var
         @test length(summary_intrinsic_var.u[1]) == d
 
         Random.seed!(555)
@@ -685,7 +685,7 @@ end
                                                                                 sampling=BasicSampling(20),
                                                                                 confint_method=PercentileConfInt,
                                                                                 level=0.8)
-        @test summary_cor_ens.statistic == :clonal_intrinsic_crosscor
+        @test summary_cor_ens.statistic == :intrinsic_crosscor
         @test isequal(summary_cor_ens.u, summary_cor_vec.u)
         @test isequal(summary_cor_ens.lower, summary_cor_vec.lower)
         @test isequal(summary_cor_ens.upper, summary_cor_vec.upper)
