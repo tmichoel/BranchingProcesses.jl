@@ -1,5 +1,45 @@
 # Changelog
 
+## BranchingProcesses v0.8.0
+
+[Diff since v0.7.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.7.0...v0.8.0)
+
+## Breaking Changes
+
+- No breaking changes in this release.
+
+## New Features
+
+- **Bootstrapped time-series summaries**: Added `BootstrappedTimeSeriesSolution`, which stores the bootstrap mean and lower and upper confidence bounds for each time point, along with the statistic and bootstrap settings. A plot recipe displays the estimates with confidence ribbons.
+- **Bootstrap covariance and variance summaries**: Added `timeseries_steps_crosscov_bootstrap`, `timeseries_steps_crosscor_bootstrap`, and `timeseries_steps_crosscov_variance_explained_bootstrap` for bootstrapped cross-covariance, cross-correlation, and the variance explained by covariance-matrix eigenvalues.
+- **Particle-number and intrinsic-statistics time series**: Added APIs for particle-number series and their mean and variance, as well as the clone mean and intrinsic cross-covariance, variance, and cross-correlation. Bootstrap variants are available for these summaries. The intrinsic statistics account for variation in clone particle counts; they are mathematically valid when solutions use `reduction=sum` and no rescaling.
+- **Rescaling for time-series outputs**: `rescale` and `rescale!` now support `DiffEqArray` and `BootstrappedTimeSeriesSolution`. For bootstrapped solutions, both confidence bounds are rescaled along with the estimates.
+- **Vector inputs for covariance utilities**: `timestep_crosscov` and `timestep_crosscor` now accept a vector of `ReducedBranchingProcessSolution` objects as well as an ensemble solution.
+
+## Bug Fixes
+
+- No standalone bug fixes in this release.
+
+## Compatibility Updates
+
+- Added `Bootstrap` as a runtime dependency for the bootstrap summaries.
+
+## Internal Changes
+
+- Updated the CI Julia version to 1.13, while retaining the prerelease test job.
+
+## Merged pull requests
+
+- Support vector input for `timestep_crosscov` / `timestep_crosscor` (#51)
+- Add bootstrapped cross-covariance and cross-correlation time-series summaries (#52)
+- Implement bootstrapped time series for percent variance explained (#53)
+- Bump `actions/checkout` from 6 to 7 (#54)
+- Add particle-number and intrinsic-statistics time-series APIs with bootstrap support (#55)
+- Add `rescale` / `rescale!` support for time-series outputs (#56)
+- Add intrinsic cross-correlation functions (#57)
+
+---
+
 ## BranchingProcesses v0.7.0
 
 [Diff since v0.6.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.6.0...v0.7.0)
