@@ -68,7 +68,7 @@ end
 
 
 """
-    fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist::Distribution, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)
+    fluctuation_experiment(bp::ConstantRateBranchingProblem, u0_dist, nclone::Integer; reduction=sum, ensemble_alg=EnsembleThreads(), alg=nothing, solver_kwargs=NamedTuple(), reduce_kwargs=NamedTuple(), rescale=nothing)
 
 Simulate a Luria-Delbrück fluctuation experiment by running `nclone` independent branching
 process simulations, each starting from a different initial state sampled from `u0_dist`.
@@ -86,6 +86,8 @@ interface, and each clone's branching tree is reduced to a time series via [`red
   from which the initial state for each clone is independently sampled. Must be compatible
   with the initial-condition type of `bp.prob` (e.g. a `UnivariateDistribution` for
   scalar problems, a `MultivariateDistribution` for vector-valued problems).
+  Alternatively, a deterministic initial state of the same type as the initial state of
+  `bp.prob`, in which case all clones start from this same state.
 - `nclone`: The number of independent clones (trajectories) to simulate.
 
 ## Keyword Arguments
@@ -145,7 +147,7 @@ See also: [`ConstantRateBranchingProblem`](@ref), [`solve_and_reduce`](@ref),
 [`rescale!`](@ref), [`ReducedBranchingProcessSolution`](@ref)
 """
 function fluctuation_experiment(bp::ConstantRateBranchingProblem,
-                                u0_dist::Distribution,
+                                u0_dist,
                                 nclone::Integer;
                                 reduction=sum,
                                 ensemble_alg=EnsembleThreads(),
@@ -153,7 +155,9 @@ function fluctuation_experiment(bp::ConstantRateBranchingProblem,
                                 solver_kwargs=NamedTuple(),
                                 reduce_kwargs=NamedTuple(),
                                 rescale=nothing)
-    prob_func = (prob, i) -> remake(prob, u0=rand(u0_dist))
+    prob_func = u0_dist isa Distribution ?
+        (prob, i) -> remake(prob, u0=rand(u0_dist)) :
+        (prob, i) -> remake(prob, u0=copy(u0_dist))
     ep = EnsembleProblem(bp; prob_func=prob_func)
     results = solve(ep, alg, ensemble_alg; trajectories=nclone, reduction=reduction, reduce_kwargs..., solver_kwargs...)
     if rescale !== nothing
