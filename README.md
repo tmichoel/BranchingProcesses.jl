@@ -3,6 +3,11 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://tmichoel.github.io/BranchingProcesses.jl/dev/)
 [![Build Status](https://github.com/tmichoel/BranchingProcesses.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/tmichoel/BranchingProcesses.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
+> [!NOTE]
+> If you find this software useful, please cite the paper:
+>
+> T. Michoel, *Fluctuation-dissipation relation in branching particle systems*, [arXiv:2610.39624](https://arxiv.org/abs/2610.39624)
+
 
 [BranchingProcesses](https://github.com/tmichoel/BranchingProcesses.jl) is a Julia package for modelling branching stochastic processes, also known as branching particle systems. 
 
