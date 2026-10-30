@@ -48,10 +48,7 @@ makedocs(
             "Tree reduction" => "examples/tree-reduction.md",
             "Fluctuation experiment" => "examples/fluctuation-experiment.md",
             "Spatial heatmaps" => "examples/spatial-heatmap.md"
-        ],
-        "Fluctuation-dissipation relation" => [
-            "Branching OUP 1D" => "fdr/fdr-branching-oup-1d.md"
-        ]
+            ]
         ]
 )
 
