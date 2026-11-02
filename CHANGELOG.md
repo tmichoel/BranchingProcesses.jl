@@ -1,5 +1,39 @@
 # Changelog
 
+## BranchingProcesses v0.9.0
+
+[Diff since v0.8.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.8.0...v0.9.0)
+
+## Breaking Changes
+
+- No breaking changes in this release.
+
+## New Features
+
+- **Deterministic initial states in `fluctuation_experiment`**: `u0_dist` may now be a fixed initial state as well as a distribution. A fixed state is copied for each clone, so all clones start from the same value without sharing mutable state.
+
+## Bug Fixes
+
+- No standalone bug fixes in this release.
+
+## Compatibility Updates
+
+- Added support for JumpProcesses 10 while retaining compatibility with version 9.
+- Added support for DocStringExtensions 0.10 while retaining compatibility with version 0.9.
+
+## Documentation
+
+- Added a citation link in the README for the paper *Fluctuation-dissipation relation in branching particle systems*.
+
+## Merged pull requests
+
+- Allow deterministic initial state in `fluctuation_experiment` (#62)
+- CompatHelper: bump compat for JumpProcesses in `[extras]` to 10 (#60)
+- CompatHelper: bump compat for JumpProcesses to 10 (#61)
+- CompatHelper: bump compat for DocStringExtensions to 0.10 (#63)
+
+---
+
 ## BranchingProcesses v0.8.0
 
 [Diff since v0.7.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.7.0...v0.8.0)
