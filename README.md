@@ -8,11 +8,11 @@
 >
 > T. Michoel, *Fluctuation-dissipation relation in branching particle systems*, [arXiv:2610.39624](https://arxiv.org/abs/2610.39624)
 >
-> Three [Pluto](https://plutojl.org/) notebooks are included in the [`notebooks`](notebooks) folder of this repo and on [JuliaHub](https://juliahub.com/) to reproduce the figures in the paper:
+> Three [Pluto](https://plutojl.org/) notebooks are included in the [`notebooks`](https://github.com/tmichoel/BranchingProcesses.jl/tree/main/notebooks) folder of this repo and on [JuliaHub](https://juliahub.com/) to reproduce the figures in the paper:
 >
-> - Simulation of branching one-dimensional Ornstein-Uhlenbeck processes with fast, critical, and slow fluctuations. ([repo](notebooks/BranchingOUP_1D.jl))([juliahub](<https://platform.juliahub.com/ui/Notebooks/tmichoel-1/Fluctuation-dissipation relation for branching particle systems/BranchingOUP_1D.jl>))
-> - Simulation of a branching two-dimensional Ornstein-Uhlenbeck processes with macroscopic cofluctuation and dimensionality reduction. ([repo](notebooks/BranchingOUP_2D_cofluctuation.jl))([juliahub](<https://platform.juliahub.com/ui/Notebooks/tmichoel-1/Fluctuation-dissipation relation for branching particle systems/BranchingOUP_2D_cofluctuation.jl>))
-> - Simulation of a branching two-dimensional Ornstein-Uhlenbeck processes with macroscopic oscillations. ([repo](notebooks/BranchingOUP_2D_oscillation.jl))([juliahub](<https://platform.juliahub.com/ui/Notebooks/tmichoel-1/Fluctuation-dissipation relation for branching particle systems/BranchingOUP_2D_oscillation.jl>))
+> - Simulation of branching one-dimensional Ornstein-Uhlenbeck processes with fast, critical, and slow fluctuations. ([repo](https://github.com/tmichoel/BranchingProcesses.jl/blob/main/notebooks/BranchingOUP_1D.jl))([juliahub](<https://platform.juliahub.com/ui/Notebooks/tmichoel-1/Fluctuation-dissipation relation for branching particle systems/BranchingOUP_1D.jl>))
+> - Simulation of a branching two-dimensional Ornstein-Uhlenbeck processes with macroscopic cofluctuation and dimensionality reduction. ([repo](https://github.com/tmichoel/BranchingProcesses.jl/blob/main/notebooks/BranchingOUP_2D_cofluctuation.jl))([juliahub](<https://platform.juliahub.com/ui/Notebooks/tmichoel-1/Fluctuation-dissipation relation for branching particle systems/BranchingOUP_2D_cofluctuation.jl>))
+> - Simulation of a branching two-dimensional Ornstein-Uhlenbeck processes with macroscopic oscillations. ([repo](https://github.com/tmichoel/BranchingProcesses.jl/blob/main/notebooks/BranchingOUP_2D_oscillation.jl))([juliahub](<https://platform.juliahub.com/ui/Notebooks/tmichoel-1/Fluctuation-dissipation relation for branching particle systems/BranchingOUP_2D_oscillation.jl>))
 
 
 [BranchingProcesses](https://github.com/tmichoel/BranchingProcesses.jl) is a Julia package for modelling branching stochastic processes, also known as branching particle systems. 
