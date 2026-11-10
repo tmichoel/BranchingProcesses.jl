@@ -1,5 +1,32 @@
 # Changelog
 
+## BranchingProcesses v0.10.0
+
+[Diff since v0.9.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.9.0...v0.10.0)
+
+## Breaking Changes
+
+- No breaking changes in this release.
+
+## New Features
+
+- **Reproducible paper notebooks**: Added three Pluto notebooks that reproduce figures for *Fluctuation-dissipation relation in branching particle systems*: simulations of one-dimensional branching Ornstein-Uhlenbeck processes with fast, critical, and slow fluctuations; two-dimensional processes with macroscopic cofluctuation and dimensionality reduction; and two-dimensional processes with macroscopic oscillations.
+
+## Bug Fixes
+
+- No standalone bug fixes in this release.
+
+## Documentation
+
+- Added links in the README to the notebooks in the repository and on JuliaHub.
+- Fixed README notebook links so they render correctly in the documentation build.
+
+## Merged pull requests
+
+- Fix docs build: use absolute README notebook links (#65)
+
+---
+
 ## BranchingProcesses v0.9.0
 
 [Diff since v0.8.0](https://github.com/tmichoel/BranchingProcesses.jl/compare/v0.8.0...v0.9.0)
